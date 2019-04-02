@@ -1,25 +1,10 @@
 #!/bin/sh
+GLOSSY_DIR := ../..
 
-# define the root of the Contiki source tree (relative to this directory), the application name 
-# and the system-wide Contiki makefile, which contains the definitions of the Contiki core system 
-# and points out to the specific Makefile of our target platform. Makefile.include must always be 
-# located in the root folder of the Contiki source tree.
+PROJECTDIRS += $(GLOSSY_DIR)/arch/platform/cc26x0-cc13x0/sensortag/cc1350
+PROJECTDIRS += $(GLOSSY_DIR)/core/net
+
 CONTIKI_PROJECT = glossy
 all: $(CONTIKI_PROJECT)
-CONTIKI = ../../contiki-ng
-#SRCS = ${shell find . -maxdepth 1 -type f -name "*.[c]" -printf "%f "}
-
-
+CONTIKI = $(GLOSSY_DIR)/contiki-ng
 include $(CONTIKI)/Makefile.include
-
-#flocklab:
-## embed image
-#	@base64 $(CONTIKI_PROJECT).exe > $(CONTIKI_PROJECT).$(TARGET).b64
-#	@sed -i -n '1h;1!H;$${ g;s/<data>.*<\/data>/<data>\n<\/data>/;p}' flocklab-cc430.xml
-#	@sed -i '/<data>/r $(CONTIKI_PROJECT).$(TARGET).b64' flocklab-cc430.xml
-#	@rm $(CONTIKI_PROJECT).$(TARGET).b64
-#
-#upload: 
-#	@export LD_LIBRARY_PATH="/home/$(USER)/ti/ccsv6/ccs_base/DebugServer/drivers/"
-#	@mspdebug tilib "prog $(CONTIKI_PROJECT).hex" --allow-fw-update
-

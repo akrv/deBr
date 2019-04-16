@@ -38,11 +38,18 @@
 
 #include "contiki.h"
 #include "platform.h"
-
+#include "glossy.h"
+#include "radio.h"
+#include "rtimer.h"
+#include "clock.h"
 /*---------------------------------------------------------------------------*/
 #ifndef GLOSSY_CONF_RTIMER_ID
 #define GLOSSY_CONF_RTIMER_ID   RTIMER_HF_3
 #endif /* GLOSSY_CONF_RTIMER_ID */
+/*---------------------------------------------------------------------------*/
+
+/*---------------------------------------------------------------------------*/
+#define node_id                 NODE_ID
 /*---------------------------------------------------------------------------*/
 
 /* minimum and maximum number of slots after which the timeout expires, since
@@ -266,6 +273,7 @@ typedef struct {
 } glossy_state_t;
 /*---------------------------------------------------------------------------*/
 static glossy_state_t g;
+static struct radio_driver radio;
 
 /*------------------------ Glossy helper functions --------------------------*/
 static inline uint8_t
@@ -316,7 +324,7 @@ process_glossy_header(uint8_t *pkt, uint8_t pkt_len, uint8_t crc_ok)
     /* store the payload_len */
     g.payload_len = pkt_len - GLOSSY_HEADER_LEN(g.header.pkt_type);
     /* store the header_len */
-    rf1a_set_header_len_rx(GLOSSY_HEADER_LEN(g.header.pkt_type));
+    //rf1a_set_header_len_rx(GLOSSY_HEADER_LEN(g.header.pkt_type)); //TODO not needed, right !!
   }
 
   return GLOSSY_SUCCESS;
@@ -331,15 +339,21 @@ estimate_T_slot(uint8_t pkt_len)
 }
 /*---------------------------------------------------------------------------*/
 static inline char
-timeout_expired(rtimer_t *rt)
+timeout_expired(struct rtimer *rt)
 {
-  if(!rf1a_is_busy()) {
+  if(!radio.receiving_packet) {
     /* we are not receiving anything: retransmit the packet */
-    rf1a_start_tx();
+    
+    //rf1a_start_tx(); //TODO there is no func to start tx like this in cc1350
+
     g.header.relay_cnt = g.relay_cnt_timeout;
-    rf1a_write_to_tx_fifo((uint8_t *)&g.header,
-                          GLOSSY_HEADER_LEN(g.header.pkt_type),
-                          (uint8_t *)g.payload, g.payload_len);
+    //rf1a_write_to_tx_fifo((uint8_t *)&g.header,
+    //                      GLOSSY_HEADER_LEN(g.header.pkt_type),
+    //                      (uint8_t *)g.payload, g.payload_len);
+    //TODO: handle the payload in another way
+    radio.send((uint8_t *)&g.header,
+                  GLOSSY_HEADER_LEN(g.header.pkt_type),
+                  (uint8_t *)g.payload, g.payload_len);
     g.t_timeout = rt->time;
   } else {
     /* we are receiving a packet: postpone the timeout by one slot */
@@ -390,11 +404,13 @@ void
 glossy_start(uint16_t initiator_id, uint8_t *payload, uint8_t payload_len,
              uint8_t n_tx_max, glossy_sync_t sync, glossy_rf_cal_t rf_cal)
 {
+  radio.on();
   GLOSSY_STARTED;
   DEBUG_PRINT_VERBOSE("Glossy started: in=%u, pl=%u, n=%u, s=%u", initiator_id,
                       payload_len, n_tx_max, sync);
 
   /* disable undesired interrupts */
+  //TODO
   GLOSSY_DISABLE_INTERRUPTS;
 
   /* reset the data structure */
@@ -429,6 +445,7 @@ glossy_start(uint16_t initiator_id, uint8_t *payload, uint8_t payload_len,
   g.header.relay_cnt = 0;
   
 
+  //TODO: how can this be done for our chip
   /* automatically switch to TX at the end of RX */
   rf1a_set_rxoff_mode(RF1A_OFF_MODE_TX);
   /* automatically switch to RX at the end of TX */
@@ -437,18 +454,21 @@ glossy_start(uint16_t initiator_id, uint8_t *payload, uint8_t payload_len,
   rf1a_set_calibration_mode(RF1A_CALIBRATION_MODE_MANUAL);
   
   /* re-configure patable (config is lost when radio was in sleep mode) */
-  rf1a_set_tx_power(RF_CONF_TX_POWER);
+  //TODO: what is the value of TX Power, is it defined somewhere else? [1]
+  //rf1a_set_tx_power(RF_CONF_TX_POWER);
+  radio.set_value(RADIO_PARAM_TXPOWER, RF_CONF_TX_POWER);
 
   if(rf_cal == GLOSSY_WITH_RF_CAL) {
     /* if instructed so, perform a manual calibration */
     rf1a_manual_calibration();
   }
-  rf1a_set_header_len_rx(GLOSSY_HEADER_LEN(g.header.pkt_type));
+  //rf1a_set_header_len_rx(GLOSSY_HEADER_LEN(g.header.pkt_type)); //TODO no need to set it right !!
 
-  rf1a_go_to_idle();
+  //rf1a_go_to_idle(); //TODO if there is something that should be called instead then probably it will be directly from cc1350 rf API
   
   if(IS_INITIATOR()) {
     /* Glossy initiator */
+    //TODO where is MAX LEN defined [1]
     if(GET_SYNC(g.header.pkt_type) == GLOSSY_UNKNOWN_SYNC ||
        (g.payload_len + GLOSSY_HEADER_LEN(g.header.pkt_type) + 1) >
        RF_CONF_MAX_PKT_LEN) {
@@ -459,15 +479,19 @@ glossy_start(uint16_t initiator_id, uint8_t *payload, uint8_t payload_len,
     } else {
       /* start the first transmission */
       g.t_timeout = rtimer_now_hf() + TIMEOUT_EXTRA_TICKS;
-      rf1a_start_tx();
-      rf1a_write_to_tx_fifo((uint8_t *)&g.header,
-                            GLOSSY_HEADER_LEN(g.header.pkt_type),
-                            (uint8_t *)g.payload, g.payload_len);
+      //rf1a_start_tx();
+      //rf1a_write_to_tx_fifo((uint8_t *)&g.header,
+      //                      GLOSSY_HEADER_LEN(g.header.pkt_type),
+      //                      (uint8_t *)g.payload, g.payload_len);  
+      radio.send((uint8_t *)&g.header,
+                  GLOSSY_HEADER_LEN(g.header.pkt_type),
+                  (uint8_t *)g.payload, g.payload_len);
       g.relay_cnt_timeout = 0;
     }
   } else {
     /* Glossy receiver */
-    rf1a_start_rx();      
+    //rf1a_start_rx();
+    radio.read((uint8_t *)g.payload, g.payload_len);
 #if GLOSSY_CONF_COLLECT_STATS
     /* measure the channel noise (but only if waiting for the schedule */
     if(sync == GLOSSY_WITH_SYNC) {

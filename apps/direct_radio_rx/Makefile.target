@@ -1,0 +1,2 @@
+TARGET=simplelink
+BOARD=sensortag/cc1350

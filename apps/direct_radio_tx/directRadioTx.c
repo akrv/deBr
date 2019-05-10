@@ -14,11 +14,9 @@
 #define SEND_INTERVAL (2 * CLOCK_SECOND)
 
 static uint8_t packet[PAYLOAD_LENGTH];
-
 /*---------------------------------------------------------------------------*/
 PROCESS(direct_radio_process, "Direct Radio Process");
 AUTOSTART_PROCESSES(&direct_radio_process);
-
 /*---------------------------------------------------------------------------*/
 PROCESS_THREAD(direct_radio_process, ev, data)
 {
@@ -26,9 +24,7 @@ PROCESS_THREAD(direct_radio_process, ev, data)
 
   PROCESS_BEGIN();
 
-  //if it's not working - try maual init or on
-  //NETSTACK_RADIO.init();
-  //NETSTACK_RADIO.on();
+  NETSTACK_RADIO.on();
 
 
   for (int i = 0; i < PAYLOAD_LENGTH; i++)
@@ -44,7 +40,16 @@ PROCESS_THREAD(direct_radio_process, ev, data)
     NETSTACK_RADIO.send(&packet, PAYLOAD_LENGTH);
     LOG_INFO("packet sent\n");
     LOG_INFO("%s\n", packet);
+    
+    while(!NETSTACK_RADIO.pending_packet()) {
+      PROCESS_PAUSE();
+    }
+    if (NETSTACK_RADIO.read(&packet,PAYLOAD_LENGTH)) {
+      LOG_INFO("packet received\n");
+      LOG_INFO("%s\n", packet);
+    }
 
+    LOG_INFO("wait for the timer to expire\n");
     etimer_reset(&periodic_timer);
   }
 

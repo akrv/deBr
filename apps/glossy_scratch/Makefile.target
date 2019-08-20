@@ -1,0 +1,3 @@
+#TARGET=cc26x0-cc13x0
+TARGET=simplelink
+BOARD=sensortag/cc1350

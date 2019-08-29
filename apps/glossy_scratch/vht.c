@@ -3,9 +3,12 @@
 #include "ti/drivers/timer/GPTimerCC26XX.h"
 #include <math.h>
 
-#include "ftoa.h"
 
 #include "vht.h"
+
+#include "ftoa.h"
+
+#include "int-master.h"
 
 /* Log configuration */
 #include "sys/log.h"
@@ -50,8 +53,10 @@ static vht_timer_t vht_timer = {.phi = PHI_0};
 
 // Processor won't sleep when this function is called
 void vht_timer_init() {
+    //HF clock ----------------------------------------------------------------
     //schedule an rtimer on the next tick
     //schedule the GP_Timer
+    //TODO does the source CLK have to be explicilty specified
     GPTimerCC26XX_Params params;
     GPTimerCC26XX_Params_init(&params);
     params.width          = GPT_CONFIG_32BIT;
@@ -64,18 +69,23 @@ void vht_timer_init() {
       //TODO When can this happen !!
       LOG_ERR("Failed to open GPTimer\n");
     }
-    int freq = 48000000; //TODO read the value from the platform itself
+    int freq = GET_MCU_CLOCK*VHT_LF_UPDATE_CYCLES;
     GPTimerCC26XX_Value loadVal = freq;
     GPTimerCC26XX_setLoadValue(hTimer, loadVal);
     GPTimerCC26XX_registerInterrupt(hTimer, NULL, GPT_INT_TIMEOUT);
     GPTimerCC26XX_start(hTimer);
+    //-------------------------------------------------------------------------
 
     //TODO delete
     vht_timer.h0_hf= GPTimerCC26XX_getFreeRunValue(hTimer);
+    LOG_DBG ("VHT h0 init value: %lu\n", vht_timer.h0_hf);
+    LOG_DBG ("init l0: %lu\n", RTIMER_NOW());
 
-    rtimer_set(&rtimer_timer, RTIMER_NOW(), 0, vht_timer_update_h0, NULL);
+    //HF clock ----------------------------------------------------------------
+    rtimer_set(&rtimer_timer, RTIMER_NOW()+VHT_LF_UPDATE_CYCLES, 0, vht_timer_update_h0, NULL);
+    //-------------------------------------------------------------------------
 
-    LOG_DBG("VHT initalized.\n");
+    LOG_DBG("VHT initalizeinterruptd.\n");
     LOG_DBG ("VHT phi: %s\n", ftoa(vht_timer.phi, 4));
     LOG_DBG ("VHT h0 init value: %lu\n", vht_timer.h0_hf);
 }
@@ -87,23 +97,27 @@ void vht_timer_init() {
 //TODO make static
 void vht_timer_update_h0() {
     vht_timer.h0_hf = GPTimerCC26XX_getFreeRunValue(hTimer);
+    rtimer_set(&rtimer_timer, RTIMER_NOW() + VHT_LF_UPDATE_CYCLES, 0, vht_timer_update_h0, NULL);
     toDelVar++;
-    //rtimer_set(&rtimer_timer, RTIMER_NOW() + 1, 0, vht_timer_update_h0, NULL);
 }
 
 uint32_t vht_time_now() {
-    vht_timer.h1_hf = GPTimerCC26XX_getFreeRunValue(hTimer);
+    int_master_status_t int_status = int_master_read_and_disable();
+    uint32_t last_h0_hf = vht_timer.h0_hf;
+    int_master_status_set(int_status);
     vht_timer.l0_lf = RTIMER_NOW();
+    vht_timer.h1_hf = GPTimerCC26XX_getFreeRunValue(hTimer);
 
-    LOG_DBG("rtimer called %lu times.\n", toDelVar);
+    //LOG_DBG("rtimer called %lu times.\n", toDelVar);
+    LOG_INFO("rtimer called %lu times.\n", toDelVar);
 
     LOG_DBG("Calculating VHT time:\n");
     LOG_DBG ("VHT l0: %lu\n", vht_timer.l0_lf);
-    LOG_DBG ("VHT h0: %lu\n", vht_timer.h0_hf);
+    LOG_DBG ("VHT h0: %lu\n", last_h0_hf);
     LOG_DBG ("VHT h1: %lu\n", vht_timer.h1_hf);
 
     double term1 = (double)vht_timer.l0_lf*vht_timer.phi;
-    double term2 = fmod( (vht_timer.h1_hf-vht_timer.h0_hf), vht_timer.phi );
+    double term2 = fmod( (vht_timer.h1_hf-last_h0_hf), vht_timer.phi );
     uint32_t vht_val = (int) round(term1+term2);
     LOG_DBG ("rtime * phi    : %s\n", ftoa(term1, 4));
     LOG_DBG ("(h1-h0) mod phi: %s\n", ftoa(term2, 4));

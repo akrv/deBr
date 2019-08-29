@@ -21,6 +21,7 @@ AUTOSTART_PROCESSES(&app_process);
 /*---------------------------------------------------------------------------*/
 PROCESS_THREAD(app_process, ev, data) 
 {
+  static uint32_t rtime_now=0,rtime_after=0;
   PROCESS_BEGIN();
 
   //if (INITIATOR_ID == NODE_ID) {
@@ -39,13 +40,22 @@ PROCESS_THREAD(app_process, ev, data)
   // TESTING VHT
   vht_timer_init();
 
-  //uint32_t rtimer_before, rtimer_after;
-  //rtimer_before = RTIMER_NOW();
-  LOG_DBG("just doing anything to waste some random cycles.\n");
-  clock_delay_usec(3000);
-  //rtimer_after = RTIMER_NOW();
-  //LOG_DBG("rtimer before wait: %lu\n", rtimer_before);
-  //LOG_DBG("rtimer after  wait: %lu\n", rtimer_after);
+  LOG_DBG("wait for 200 rtimer ticks.\n");
+  rtime_now = (uint32_t)RTIMER_NOW(); 
+  rtime_after = rtime_now+200;
+  LOG_INFO("rtime now   : %lu\n", rtime_now);
+  LOG_INFO("rtime after   : %lu\n", rtime_after);
+
+  while(rtime_after >= rtime_now) {
+    rtime_now = (uint32_t)RTIMER_NOW(); 
+    //LOG_INFO("rtime now   : %lu\n", rtime_now);
+    //PROCESS_PAUSE();
+  }
+    LOG_INFO("rtime now last: %lu\n", rtime_now);
+    LOG_INFO("waited for : %lu\n", rtime_now-rtime_after-200);
+  //clock_delay_usec(10000);
+  //PROCESS_PAUSE();
+
 
   uint32_t rtime = RTIMER_NOW();
   uint32_t vht_time = vht_time_now();

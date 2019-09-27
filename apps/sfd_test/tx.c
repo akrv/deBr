@@ -130,9 +130,9 @@ PROCESS_THREAD(direct_radio_process, ev, data)
         //                                           RF_PriorityNormal, &tx_callback, RF_EventTxDone);
 
 
+        LOG_INFO("Pausing TX.\n");
         while(tx_callback_called != true) {
           PROCESS_PAUSE();
-          //LOG_INFO("Pausing TX.\n");
          }
         LOG_INFO("TX callback called.\n");
 

@@ -31,11 +31,11 @@
 #define DATA_ENTRY_HEADER_SIZE 8  /* Constant header size of a Generic Data Entry */
 #define MAX_LENGTH             30 /* Max length byte the radio will accept */
 #define NUM_DATA_ENTRIES       2  /* NOTE: Only two data entries supported at the moment */
-#define NUM_APPENDED_BYTES     2  /* The Data Entries data field will contain:
+#define NUM_APPENDED_BYTES     5  /* The Data Entries data field will contain:
                                    * 1 Header byte (RF_cmdPropRx.rxConf.bIncludeHdr = 0x1)
                                    * Max 30 payload bytes
-                                   * 1 status byte (RF_cmdPropRx.rxConf.bAppendStatus = 0x1) */
-
+                                   * 1 status byte (RF_cmdPropRx.rxConf.bAppendStatus = 0x1) //TODO removed
+                                   * 4 Timestamp */
 
 
 /***** Prototypes *****/
@@ -58,10 +58,12 @@ static dataQueue_t dataQueue;
 static rfc_dataEntryGeneral_t* currentDataEntry;
 static uint8_t packetLength;
 static uint8_t* packetDataPointer;
-
+static uint32_t rxTimestamp;
+static uint32_t currentTimestamp;
 
 static uint8_t packet[MAX_LENGTH + NUM_APPENDED_BYTES - 1]; /* The length byte is stored in a separate variable */
 
+//TODO if thread sync needed to be done in glossy, then do it in a better way
 static bool rx_callback_called = false;
 
 /***** Function definitions *****/
@@ -75,6 +77,7 @@ static bool rx_callback_called = false;
 void rx_callback(RF_Handle h, RF_CmdHandle ch, RF_EventMask e)
 //TODO set the callback to the highest proprity
 {
+    currentTimestamp = RF_getCurrentTime();
     if (e & RF_EventRxEntryDone)
     {
       // Do something, for instance post a semaphore.
@@ -86,6 +89,7 @@ void rx_callback(RF_Handle h, RF_CmdHandle ch, RF_EventMask e)
     }
     if (e & RF_EventRxOk)
     {
+      rx_callback_called = true;
       // Do something
     }
 
@@ -102,10 +106,11 @@ void rx_callback(RF_Handle h, RF_CmdHandle ch, RF_EventMask e)
 
         /* Copy the payload + the status byte to the packet variable */
         memcpy(packet, packetDataPointer, (packetLength + 1));
+        
+        memcpy(&rxTimestamp, packetDataPointer + packetLength , 4);
 
         RFQueue_nextEntry();
     //}
-    rx_callback_called = true;
 }
 /*---------------------------------------------------------------------------*/
 /*---------------------------------------------------------------------------*/
@@ -135,6 +140,11 @@ PROCESS_THREAD(direct_radio_process, ev, data)
     RF_cmdPropRx.pQueue = &dataQueue;
     /* Discard ignored packets from Rx queue */
     RF_cmdPropRx.rxConf.bAutoFlushIgnored = 1;
+    //RF_cmdPropRx.rxConf.bAppendRssi = 1;
+    RF_cmdPropRx.rxConf.bAppendTimestamp = 1;
+    //RF_cmdPropRx.rxConf.bIncludeHdr = 1;
+    RF_cmdPropRx.rxConf.bAppendStatus = 0;
+    //RF_cmdPropRX.rxConf.bAppendTimestamp = 0;
     /* Discard packets with CRC error from Rx queue */
     RF_cmdPropRx.rxConf.bAutoFlushCrcErr = 1;
     /* Implement packet length filtering to avoid PROP_ERROR_RXBUF */
@@ -148,7 +158,7 @@ PROCESS_THREAD(direct_radio_process, ev, data)
 
     /* Set the frequency */
     RF_postCmd(rfHandle, (RF_Op*)&RF_cmdFs, RF_PriorityNormal, NULL, 0);
-    LOG_INFO("FS cmd posted");    
+    LOG_INFO("FS cmd posted.\n");    
 
     /* Enter RX mode and stay forever in RX */
     //RF_EventMask terminationReason = RF_runCmd(rfHandle, (RF_Op*)&RF_cmdPropRx,
@@ -158,9 +168,9 @@ PROCESS_THREAD(direct_radio_process, ev, data)
                                                RF_PriorityNormal, &rx_callback,
       RF_EventRxEntryDone | RF_EventNDataWritten | RF_EventRxOk);
 
+    LOG_INFO("Pausing till RX received.\n");
     while(rx_callback_called != true) {
       PROCESS_PAUSE();
-      LOG_INFO("Pausing.\n");
     }
     LOG_INFO("RX callback called.\n");
 
@@ -171,6 +181,10 @@ PROCESS_THREAD(direct_radio_process, ev, data)
         printf("%u", packet[i]);
     }
     printf("\n");
+    LOG_INFO("Timestamp: %lu.\n", rxTimestamp);
+    LOG_INFO("Timestamp: %lu.\n", currentTimestamp);
+    //LOG_INFO("data poitner: %lu.\n", &packetDataPointer);
+    //LOG_INFO("data poitner: %lu.\n", &packetDataPointer+5);
 
     //switch(terminationReason)
     //{

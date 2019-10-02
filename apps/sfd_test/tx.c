@@ -92,9 +92,9 @@ PROCESS_THREAD(direct_radio_process, ev, data)
     /* Set the frequency */
     RF_postCmd(rfHandle, (RF_Op*)&RF_cmdFs, RF_PriorityNormal, &fs_callback, RF_EventCmdDone);
 
+    LOG_INFO("Pausing till FS finish.\n");
     while(fs_callback_called != true) {
       PROCESS_PAUSE();
-      LOG_INFO("Pausing FS.\n");
     }
     LOG_INFO("FS callback called.\n");
 
@@ -130,7 +130,7 @@ PROCESS_THREAD(direct_radio_process, ev, data)
         //                                           RF_PriorityNormal, &tx_callback, RF_EventTxDone);
 
 
-        LOG_INFO("Pausing TX.\n");
+        LOG_INFO("Pausing till TX finish.\n");
         while(tx_callback_called != true) {
           PROCESS_PAUSE();
          }

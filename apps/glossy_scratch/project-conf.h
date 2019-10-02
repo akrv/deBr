@@ -5,8 +5,10 @@
 
 #define INITIATOR_ID    1
 #define NODE_ID    2
+#define N_TX  3
 
 #define GLOSSY_PAYLOAD_LEN 8
+#define GLOSSY_PAYLOAD_LEN_WITH_COUNT GLOSSY_PAYLOAD_LEN+1
 #define GLOSSY_N_TX                     3
 
 #define VHT_LF_UPDATE_CYCLES 3 // specify after how many cycles of LF CLK does the VHT update h0

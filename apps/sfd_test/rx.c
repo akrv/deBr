@@ -1,6 +1,7 @@
 /***** Includes *****/
 /* Contiki */
 #include "contiki.h"
+#include "watchdog.h"
 
 /* Standard C Libraries */
 #include <stdlib.h>
@@ -10,6 +11,7 @@
 
 /* Driverlib Header files */
 #include DeviceFamily_constructPath(driverlib/rf_prop_mailbox.h)
+#include DeviceFamily_constructPath(driverlib/rf_common_cmd.h)
 
 /* RF settings */
 #include "smartrf_settings/smartrf_settings.h"
@@ -62,6 +64,19 @@ static uint32_t rxTimestamp;
 static uint32_t currentTimestamp;
 
 static uint8_t packet[MAX_LENGTH + NUM_APPENDED_BYTES - 1]; /* The length byte is stored in a separate variable */
+
+rfc_CMD_SYNC_START_RAT_t RF_cmdSyncStartRAT = {
+  .commandNo = CMD_SYNC_START_RAT,
+  .pNextOp = 0, // INSERT APPLICABLE POINTER: (uint8_t*)&xxx
+  .startTime = 0x00000000,
+  .startTrigger.triggerType = 0x0,
+  .startTrigger.bEnaCmd = 0x0,
+  .startTrigger.triggerNo = 0x0,
+  .startTrigger.pastTrig = 0x0,
+  .condition.rule = 0x1,
+  .condition.nSkip = 0x0,
+  .rat0 = 0,
+};
 
 //TODO if thread sync needed to be done in glossy, then do it in a better way
 static bool rx_callback_called = false;
@@ -156,6 +171,17 @@ PROCESS_THREAD(direct_radio_process, ev, data)
     rfHandle = RF_open(&rfObject, &RF_prop,
                        (RF_RadioSetup*)&RF_cmdPropRadioDivSetup, &rfParams);
 
+    // Set highest possible priority
+    uint32_t swiPriority = ~0;
+    RF_Stat status = RF_control(rfHandle, RF_CTRL_SET_SWI_PRIORITY, &swiPriority);
+    if (status != RF_StatBusyError) {
+      LOG_INFO("Priority changed.\n");
+    }
+
+    // start the RAT timer synchronized to RTC
+    RF_postCmd(rfHandle, (RF_Op*)&RF_cmdSyncStartRAT, RF_PriorityNormal, NULL, 0);
+    LOG_INFO("Start RAT cmd posted.\n");    
+
     /* Set the frequency */
     RF_postCmd(rfHandle, (RF_Op*)&RF_cmdFs, RF_PriorityNormal, NULL, 0);
     LOG_INFO("FS cmd posted.\n");    
@@ -165,12 +191,13 @@ PROCESS_THREAD(direct_radio_process, ev, data)
     //                                           RF_PriorityNormal, &callback,
     //                                           RF_EventRxEntryDone);
     RF_postCmd(rfHandle, (RF_Op*)&RF_cmdPropRx,
-                                               RF_PriorityNormal, &rx_callback,
+                                               RF_PriorityHighest, &rx_callback,
       RF_EventRxEntryDone | RF_EventNDataWritten | RF_EventRxOk);
 
     LOG_INFO("Pausing till RX received.\n");
     while(rx_callback_called != true) {
-      PROCESS_PAUSE();
+      watchdog_periodic();
+      //PROCESS_PAUSE();
     }
     LOG_INFO("RX callback called.\n");
 
@@ -183,6 +210,7 @@ PROCESS_THREAD(direct_radio_process, ev, data)
     printf("\n");
     LOG_INFO("Timestamp: %lu.\n", rxTimestamp);
     LOG_INFO("Timestamp: %lu.\n", currentTimestamp);
+    LOG_INFO("Timestamp: %lu.\n", RF_getCurrentTime());
     //LOG_INFO("data poitner: %lu.\n", &packetDataPointer);
     //LOG_INFO("data poitner: %lu.\n", &packetDataPointer+5);
 

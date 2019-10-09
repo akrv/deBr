@@ -1,10 +1,12 @@
 GLOSSY_DIR := ../..
 
-#PLATFORMS_ONLY = simplelink
-#PLATFORMS_ONLY = cc26x0-cc13x0
+PLATFORMS_ONLY = simplelink
 
 MAKE_MAC = MAKE_MAC_NULLMAC
 MAKE_NET = MAKE_NET_NULLNET
+
+MODULES_REL += ./smartrf_settings
+PROJECT_SOURCEFILES += RFQueue.c
 
 PROJECT_SOURCEFILES += glossy.c vht.c ftoa.c
 

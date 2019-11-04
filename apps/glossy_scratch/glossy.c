@@ -79,7 +79,7 @@ void tx_callback(RF_Handle h, RF_CmdHandle ch, RF_EventMask e)
       }
       initiator_cmd_base_time += GLOSSY_T_SLOT_WITH_ERROR;
       RF_cmdPropTx.startTime = initiator_cmd_base_time;
-      RF_cmdPropTx.pPkt[0] = payload_with_counter[0] + n_tx_count +1; // increment c (glossy relay counter)
+      RF_cmdPropTx.pPkt[0] = RF_cmdPropTx.pPkt[0] + 1; // increment c (glossy relay counter)
       RF_postCmd(rfHandle, (RF_Op*)&RF_cmdPropTx,
                                                  RF_PriorityHighest , &tx_callback, RF_EventCmdDone);
       tx_callback_called = true;

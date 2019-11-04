@@ -92,23 +92,8 @@ static bool rx_callback_called = false;
 void rx_tester_callback(RF_Handle h, RF_CmdHandle ch, RF_EventMask e)
 //TODO set the callback to the highest proprity
 {
-    if (e & RF_EventRxEntryDone)
+    if (e &  RF_EventCmdDone)
     {
-      // Do something, for instance post a semaphore.
-    }
-    if (e & RF_EventNDataWritten)
-    {
-      //TODO: how to specify the number of bytes
-      // Do something
-    }
-    if (e & RF_EventRxOk)
-    {
-      rx_callback_called = true;
-      // Do something
-    }
-
-    //if (e & RF_EventRxEntryDone)
-    //{
         /* Get current unhandled data entry */
         currentDataEntry = RFQueue_getDataEntry();
 
@@ -127,9 +112,10 @@ void rx_tester_callback(RF_Handle h, RF_CmdHandle ch, RF_EventMask e)
 
         //schedule RX again
         RF_postCmd(rfHandle, (RF_Op*)&RF_cmdPropRx,
-                                                   RF_PriorityHighest, &rx_tester_callback,
-          RF_EventRxEntryDone | RF_EventNDataWritten | RF_EventRxOk);
-    //}
+                                               RF_PriorityHighest, &rx_tester_callback, RF_EventCmdDone);
+        
+        rx_callback_called = true;
+    }
 }
 /*---------------------------------------------------------------------------*/
 /*---------------------------------------------------------------------------*/
@@ -198,8 +184,7 @@ PROCESS_THREAD(direct_radio_process, ev, data)
     //                                           RF_PriorityNormal, &callback,
     //                                           RF_EventRxEntryDone);
     RF_postCmd(rfHandle, (RF_Op*)&RF_cmdPropRx,
-                                               RF_PriorityHighest, &rx_tester_callback,
-      RF_EventRxEntryDone | RF_EventNDataWritten | RF_EventRxOk);
+                                               RF_PriorityHighest , &rx_tester_callback, RF_EventCmdDone);
 
     while(true) {
       LOG_INFO("------------------------------------------------\n");

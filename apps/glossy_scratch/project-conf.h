@@ -9,12 +9,10 @@
 #define GLOSSY_PAYLOAD_LEN 8
 #define GLOSSY_PAYLOAD_LEN_WITH_COUNT GLOSSY_PAYLOAD_LEN+1
 #define GLOSSY_N_TX                     3
-#define GLOSSY_T_SLOT                   (uint32_t) RF_convertMsToRatTicks(30) //TODO this should mean 50 ms check that
+#define GLOSSY_T_SLOT                   (uint32_t) RF_convertMsToRatTicks(30)
 #define TICKS_SHIFT_ERROR               0 /* TODO the error from real tests can sometimes be 13 ticks so we should predict \
                                                     if we need to shift this extra cycle or not  */
 #define GLOSSY_T_SLOT_WITH_ERROR        GLOSSY_T_SLOT+TICKS_SHIFT_ERROR
-//#define GLOSSY_T_SLOT_WITH_ERROR        120000
-
 
 /* Packet TX Configuration */
 /* Packet RX Configuration */

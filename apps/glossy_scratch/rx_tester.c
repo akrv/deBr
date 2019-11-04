@@ -60,7 +60,6 @@ static rfc_dataEntryGeneral_t* currentDataEntry;
 static uint8_t packetLength;
 static uint8_t* packetDataPointer;
 static uint32_t rxTimestamp;
-static uint32_t currentTimestamp;
 
 static uint32_t rxLastTimestamp = 0;
 
@@ -93,7 +92,6 @@ static bool rx_callback_called = false;
 void rx_tester_callback(RF_Handle h, RF_CmdHandle ch, RF_EventMask e)
 //TODO set the callback to the highest proprity
 {
-    currentTimestamp = RF_getCurrentTime();
     if (e & RF_EventRxEntryDone)
     {
       // Do something, for instance post a semaphore.
@@ -172,6 +170,9 @@ PROCESS_THREAD(direct_radio_process, ev, data)
     RF_cmdPropRx.maxPktLen = MAX_LENGTH;
     RF_cmdPropRx.pktConf.bRepeatOk = 0;
     RF_cmdPropRx.pktConf.bRepeatNok = 0;
+    RF_cmdPropRx.pktConf.bFsOff = 0;
+    
+    RF_cmdPropRx.startTrigger.triggerType = TRIG_NOW;
 
     /* Request access to the radio */
     rfHandle = RF_open(&rfObject, &RF_prop,
@@ -201,6 +202,7 @@ PROCESS_THREAD(direct_radio_process, ev, data)
       RF_EventRxEntryDone | RF_EventNDataWritten | RF_EventRxOk);
 
     while(true) {
+      LOG_INFO("------------------------------------------------\n");
       LOG_INFO("Pausing till RX received.\n");
       while(rx_callback_called != true) {
         watchdog_periodic();
@@ -217,10 +219,7 @@ PROCESS_THREAD(direct_radio_process, ev, data)
       printf("\n");
       LOG_INFO("Timestamp: %lu.\n", rxTimestamp);
       LOG_INFO("Last packet time diff >>>>>>>>>>>> : %lu.\n", rxTimestamp-rxLastTimestamp);
-      //LOG_INFO("Timestamp: %lu.\n", currentTimestamp);
-      //LOG_INFO("Timestamp: %lu.\n", RF_getCurrentTime());
-      //LOG_INFO("data poitner: %lu.\n", &packetDataPointer);
-      //LOG_INFO("data poitner: %lu.\n", &packetDataPointer+5);
+      LOG_INFO("------------------------------------------------\n");
       rxLastTimestamp = rxTimestamp;
       rx_callback_called = false;
     }

@@ -10,7 +10,7 @@ PROJECT_SOURCEFILES += RFQueue.c
 
 PROJECT_SOURCEFILES += glossy.c vht.c ftoa.c
 
-CONTIKI_PROJECT = glossy_scratch
+CONTIKI_PROJECT = glossy_scratch rx_tester
 all: $(CONTIKI_PROJECT)
 CONTIKI = $(GLOSSY_DIR)/contiki-ng
 include $(CONTIKI)/Makefile.include

@@ -196,12 +196,13 @@ PROCESS_THREAD(direct_radio_process, ev, data)
       rx_callback_called = false;
       //LOG_INFO("RX callback called.\n");
 
-      uint8_t i;
-      LOG_INFO("Packet: ");
-      for (i = 0; i < GLOSSY_PAYLOAD_LEN_WITH_COUNT ; i++)
-      {
-          printf("%u", packet[i]);
-      }
+      //uint8_t i;
+      //LOG_INFO("Packet: ");
+      //for (i = 0; i < GLOSSY_PAYLOAD_LEN_WITH_COUNT ; i++)
+      //{
+      //    printf("%u", packet[i]);
+      //}
+      printf("%u", packet[0]);
       printf("\n");
       //LOG_INFO("Timestamp: %lu.\n", rxTimestamp);
       //LOG_INFO("Last packet time diff >>>>>>>>>>>> : %lu.\n", rxTimestamp-rxLastTimestamp);

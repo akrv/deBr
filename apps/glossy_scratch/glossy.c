@@ -1,7 +1,9 @@
 #include "contiki.h"
 #include "watchdog.h"
 #include "net/netstack.h"
-#include "rtimer.h"
+
+/* std lib */
+#include <math.h>
 
 /* TI Drivers */
 #include <ti/drivers/rf/RF.h>
@@ -12,6 +14,7 @@
 #include "smartrf_settings/smartrf_settings.h"
 
 /* Application Header files */
+#include "glossy.h"
 #include "vht.h"
 #include "RFQueue.h"
 
@@ -31,6 +34,8 @@ static uint8_t payload_with_counter[GLOSSY_PAYLOAD_LEN_WITH_COUNT];
 static uint8_t n_tx_count;
 static uint32_t initiator_cmd_base_time;
 
+extern uint8_t glossy_payload[GLOSSY_PAYLOAD_LEN];
+
 /* Buffer which contains all Data Entries for receiving data.
  * Pragmas are needed to make sure this buffer is 4 byte aligned (requirement from the RF Core) */
 static uint8_t
@@ -48,8 +53,16 @@ static uint32_t rxTimestamp;
 
 //static uint8_t packet[MAX_LENGTH + NUM_APPENDED_BYTES - 1]; /* The length byte is stored in a separate variable */
 
+static ratmr_t last_r0 = 0; 
+
+
+static bool glossy_init_flag = false;
+static bool glossy_stop_flag = false;
+
 static bool tx_callback_called = false; //TODO delete
 static bool rx_callback_called = false; //TODO delete
+//static bool rtc_interrupt_called = false; //TODO delete
+//static bool rat_start_callback_called = false; //TODO delete
 
 
 /*---------------------------------------------------------------------------*/
@@ -68,7 +81,15 @@ static bool rx_callback_called = false; //TODO delete
 //TODO remove global variables for callbacks and use thread sync
 
 /*---------------------------------------------------------------------------*/
-/***** Callback Functions *****/
+/***** RF Callback Functions *****/
+//void rat_start_callback(RF_Handle h, RF_CmdHandle ch, RF_EventMask e)
+//{
+//    if (e & RF_EventCmdDone)
+//    {
+//      rat_start_callback_called = true;
+//    }
+//}
+/*---------------------------------------------------------------------------*/
 void tx_callback(RF_Handle h, RF_CmdHandle ch, RF_EventMask e)
 {
     if (e & RF_EventTxDone || e & RF_EventCmdDone)
@@ -77,7 +98,7 @@ void tx_callback(RF_Handle h, RF_CmdHandle ch, RF_EventMask e)
       if (n_tx_count == GLOSSY_N_TX) {
         return;
       }
-      initiator_cmd_base_time += GLOSSY_T_SLOT_WITH_ERROR;
+      initiator_cmd_base_time += GLOSSY_T_SLOT;
       RF_cmdPropTx.startTime = initiator_cmd_base_time;
       RF_cmdPropTx.pPkt[0] = RF_cmdPropTx.pPkt[0] + 1; // increment c (glossy relay counter)
       RF_postCmd(rfHandle, (RF_Op*)&RF_cmdPropTx,
@@ -111,7 +132,7 @@ void rx_callback(RF_Handle h, RF_CmdHandle ch, RF_EventMask e)
   
       // setup the first retransmission - next retransmisions will be handled by tx_callback
       initiator_cmd_base_time = rxTimestamp;
-      initiator_cmd_base_time += GLOSSY_T_SLOT_WITH_ERROR;
+      initiator_cmd_base_time += GLOSSY_T_SLOT;
       RF_cmdPropTx.startTime = initiator_cmd_base_time;
   
       // TODO not needed right !
@@ -127,6 +148,7 @@ void rx_callback(RF_Handle h, RF_CmdHandle ch, RF_EventMask e)
       rx_callback_called = true;
     }
 }
+
 /*---------------------------------------------------------------------------*/
 /***** Macros *****/
 #define IS_INITIATOR() \
@@ -137,81 +159,113 @@ void
 glossy_start(uint16_t initiator_id, uint16_t node_id, uint8_t *payload,
              uint8_t payload_len, uint8_t n_tx_max)
 {
+  LOG_DBG("----------------------------------------------------------------\n");
+  LOG_DBG("print definitions.\n");
+  LOG_DBG("GLOSSY_FLOOD_TIME_PERIOD_IN_RTC : %lu\n", GLOSSY_FLOOD_TIME_PERIOD_IN_RTC);
+  LOG_DBG("PROCESSING_TIME_IN_RTC          : %lu\n", PROCESSING_TIME_IN_RTC);
+  LOG_DBG("RTC_TICKS_BETWEEN_FLOODS        : %lu\n", RTC_TICKS_BETWEEN_FLOODS);
+  LOG_DBG("GLOSSY_FLOOD_TIME_PERIOD_IN_RAT : %lu\n", (uint32_t)(GLOSSY_FLOOD_TIME_PERIOD_IN_RAT));
+  LOG_DBG("----------------------------------------------------------------\n");
+
+  LOG_DBG("glossy_start called.\n");
+
+  if (glossy_stop_flag) {
+    LOG_DBG("glossy stopped.\n");
+    return;
+  }
+
   static uint8_t i;
 
   /* Setup RF */
   /* Request access to the radio */
   RF_Params_init(&rfParams);
   rfHandle = RF_open(&rfObject, &RF_prop, (RF_RadioSetup*)&RF_cmdPropRadioDivSetup, &rfParams);
+  LOG_INFO("RF_open executed.\n");
 
-  /* Setup VHT */
-  //vht_timer_init(rfHandle); //TODO enable VHT after finishing one flood code
+  RF_cmdSyncStartRat.rat0 = last_r0;
+  RF_postCmd(rfHandle, (RF_Op*)&RF_cmdSyncStartRat, RF_PriorityHighest , NULL, 0);
+  //while (!(RF_cmdSyncStartRat.status &  RF_EventCmdDone));
 
   /* Set the frequency */
   RF_postCmd(rfHandle, (RF_Op*)&RF_cmdFs, RF_PriorityNormal, NULL, 0);
+  while (RF_cmdFs.status & RF_EventCmdDone) {watchdog_periodic();};
+  LOG_DBG("Fs_cmd poseted to radio.\n");
 
-  /* Setting RF commands */
-  // Setting TX cmd
-  RF_cmdPropTx.pktLen = GLOSSY_PAYLOAD_LEN_WITH_COUNT ;
-  RF_cmdPropTx.pPkt = payload_with_counter; //TODO this may be a mistake
-  RF_cmdPropTx.startTrigger.pastTrig = 1;
-  RF_cmdPropTx.startTrigger.triggerType = TRIG_ABSTIME;
-  RF_cmdPropTx.startTime = 0; //to be determined by each command later
-  RF_cmdPropTx.pktConf.bFsOff = 0;
+  if (!glossy_init_flag) {
+    LOG_DBG("Init TX and RX cmds and setup reading Queue.\n");
+    /* Setting RF commands */
+    // Setting TX cmd
+    RF_cmdPropTx.pktLen = GLOSSY_PAYLOAD_LEN_WITH_COUNT ;
+    RF_cmdPropTx.pPkt = payload_with_counter; //TODO this may be a mistake
+    RF_cmdPropTx.startTrigger.pastTrig = 0;
+    RF_cmdPropTx.startTrigger.triggerType = TRIG_ABSTIME;
+    RF_cmdPropTx.startTime = 0; //to be determined by each command later
+    RF_cmdPropTx.pktConf.bFsOff = 0;
 
-  // Setting RX cmd
-  if( RFQueue_defineQueue(&dataQueue,
-                          rxDataEntryBuffer,
-                          sizeof(rxDataEntryBuffer),
-                          NUM_DATA_ENTRIES,
-                          MAX_LENGTH + NUM_APPENDED_BYTES))
-  {
-      /* Failed to allocate space for all data entries */
-      while(1);
+    // Setting RX cmd
+    if( RFQueue_defineQueue(&dataQueue,
+                            rxDataEntryBuffer,
+                            sizeof(rxDataEntryBuffer),
+                            NUM_DATA_ENTRIES,
+                            MAX_LENGTH + NUM_APPENDED_BYTES))
+    {
+        /* Failed to allocate space for all data entries */
+        while(1);
+    }
+    /* Set the Data Entity queue for received data */
+    RF_cmdPropRx.pQueue = &dataQueue;
+    /* Discard ignored packets from Rx queue */
+    RF_cmdPropRx.rxConf.bAutoFlushIgnored = 1;
+    //RF_cmdPropRx.rxConf.bAppendRssi = 1;
+    RF_cmdPropRx.rxConf.bAppendTimestamp = 1;
+    //RF_cmdPropRx.rxConf.bIncludeHdr = 1;
+    RF_cmdPropRx.rxConf.bAppendStatus = 0;
+    //RF_cmdPropRX.rxConf.bAppendTimestamp = 0;
+    /* Discard packets with CRC error from Rx queue */
+    RF_cmdPropRx.rxConf.bAutoFlushCrcErr = 1;
+    /* Implement packet length filtering to avoid PROP_ERROR_RXBUF */
+    //RF_cmdPropRx.maxPktLen = MAX_LENGTH;
+    RF_cmdPropRx.maxPktLen = GLOSSY_PAYLOAD_LEN_WITH_COUNT;
+    RF_cmdPropRx.pktConf.bRepeatOk = 0;
+    RF_cmdPropRx.pktConf.bRepeatNok = 0;
+    RF_cmdPropRx.pktConf.bFsOff = 0;
+
+    // Setup RTC and RAT sync cmd
+    RF_cmdSyncStartRat.startTrigger.pastTrig = 1;
+    RF_cmdSyncStartRat.startTrigger.triggerType = TRIG_NOW;
+
+    /* Enable output RTC clock for Radio Timer Synchronization */
+    enable_rtc_rat_sync(); //TODO maybe not needed
   }
-  /* Set the Data Entity queue for received data */
-  RF_cmdPropRx.pQueue = &dataQueue;
-  /* Discard ignored packets from Rx queue */
-  RF_cmdPropRx.rxConf.bAutoFlushIgnored = 1;
-  //RF_cmdPropRx.rxConf.bAppendRssi = 1;
-  RF_cmdPropRx.rxConf.bAppendTimestamp = 1;
-  //RF_cmdPropRx.rxConf.bIncludeHdr = 1;
-  RF_cmdPropRx.rxConf.bAppendStatus = 0;
-  //RF_cmdPropRX.rxConf.bAppendTimestamp = 0;
-  /* Discard packets with CRC error from Rx queue */
-  RF_cmdPropRx.rxConf.bAutoFlushCrcErr = 1;
-  /* Implement packet length filtering to avoid PROP_ERROR_RXBUF */
-  //RF_cmdPropRx.maxPktLen = MAX_LENGTH;
-  RF_cmdPropRx.maxPktLen = GLOSSY_PAYLOAD_LEN_WITH_COUNT;
-  RF_cmdPropRx.pktConf.bRepeatOk = 0;
-  RF_cmdPropRx.pktConf.bRepeatNok = 0;
-  RF_cmdPropRx.pktConf.bFsOff = 0;
-
-  /*TODO IMPORTANT, regarding RF cmds execution time
-         - first issue the commands separately but with the same time
-         - if that didn't work maybe somehow i should relate the time of the commands */
 
   if(IS_INITIATOR()) {
   // Initiator
   
-    LOG_DBG("Node is initiator, Start Tx\n");
+    LOG_DBG("Initiator Node, start flood\n");
 
-    //TODO: check syncing
-
+    //TODO check for new payload - for now assume payload doesn't change
     // add glossy header (the c relay counter)
     for(i = 0; i < (uint8_t)GLOSSY_PAYLOAD_LEN_WITH_COUNT ; i++) {
       payload_with_counter[i+1] = payload[i]; //first byte reserved for header (c: the relay counter)
     }
+    LOG_DBG("added counter byte to payload.\n");
 
-    initiator_cmd_base_time = RF_ratGetValue();
-    initiator_cmd_base_time += GLOSSY_T_SLOT_WITH_ERROR;
-    RF_cmdPropTx.startTime = initiator_cmd_base_time;
     n_tx_count = 0;
     RF_cmdPropTx.pPkt[0] = n_tx_count; // increment c (glossy relay counter)
+
+    if (!glossy_init_flag) {
+      initiator_cmd_base_time =  RF_ratGetValue()+2*GLOSSY_T_SLOT; //TODO change GLOSSY_T_SLOT to least possible number (but adequate enough to process)
+    } else /* if(glossy_init_flag) */ {
+      initiator_cmd_base_time += GLOSSY_FLOOD_TIME_PERIOD_IN_RAT;
+    }
+    RF_cmdPropTx.startTime = initiator_cmd_base_time;
+    LOG_DBG("init_cmd_base_time: %lu\n", initiator_cmd_base_time);
 
     /* start first transmission - post other tx from callbacks*/
     RF_postCmd(rfHandle, (RF_Op*)&RF_cmdPropTx,
                                                RF_PriorityHighest , &tx_callback, RF_EventCmdDone);
+    LOG_DBG("First TX cmd posted.\n");
+
   } else {
   // Normal node not Initiator
     LOG_DBG("Node is not initiator, Start RX\n");
@@ -241,9 +295,29 @@ glossy_start(uint16_t initiator_id, uint16_t node_id, uint8_t *payload,
     
   }
   
+  // TODO do this with events
   LOG_DBG("Wait for N TX.\n");
-  while (n_tx_count != n_tx_max) {
+  while (n_tx_count < n_tx_max) {
+    LOG_DBG("n_tx_count: %u.\n", n_tx_count);
+    LOG_DBG("n_tx_max: %u.\n", n_tx_max);
     watchdog_periodic();
   }
+  LOG_DBG("One flood finished.\n");
+
+  glossy_init_flag = true;
+
+  LOG_DBG("RAT time: %lu\n", RF_ratGetValue());
+  RF_postCmd(rfHandle, (RF_Op*)&RF_cmdSyncStopRat, RF_PriorityHighest , NULL, 0);
+  while (!(RF_cmdSyncStopRat.status &  (DONE_OK | DONE_COUNTDOWN | DONE_TIMEOUT | DONE_STOPPED | DONE_ABORT | DONE_FAILED))) {
+    watchdog_periodic();
+    LOG_DBG("Waiting RAT to stop.\n");
+  }
+  LOG_DBG("RAT stopped, code: %x.\n", RF_cmdSyncStopRat.status);
+  last_r0 = RF_cmdSyncStopRat.rat0;
+  LOG_DBG("rat0 returned: %lu\n", RF_cmdSyncStopRat.rat0);
+  RF_close(rfHandle);
+  LOG_DBG("rfHandle closed.\n");
+
+  //while(1) {watchdog_periodic();}
 }
 /*---------------------------------------------------------------------------*/

@@ -3,15 +3,23 @@
 
 #define LOG_LEVEL_APP LOG_LEVEL_DBG
 #define INITIATOR_ID    1
-#define NODE_ID    2
+#define NODE_ID    1
 
 #define GLOSSY_PAYLOAD_LEN 8
 #define GLOSSY_PAYLOAD_LEN_WITH_COUNT GLOSSY_PAYLOAD_LEN+1
 #define GLOSSY_N_TX                     3
-#define GLOSSY_T_SLOT                   (uint32_t) RF_convertMsToRatTicks(5)
-#define TICKS_SHIFT_ERROR               0 /* TODO the error from real tests can sometimes be 13 ticks so we should predict \
-                                                    if we need to shift this extra cycle or not  */
-#define GLOSSY_T_SLOT_WITH_ERROR        GLOSSY_T_SLOT+TICKS_SHIFT_ERROR
+#define GLOSSY_T_SLOT                   (uint32_t) RF_convertMsToRatTicks(5) // in RAT ticks
+
+//TODO find a method that convert milliseconds to RTC ticks (round to RTC ticks)
+#define GLOSSY_FLOOD_TIME_PERIOD_IN_RTC        (uint32_t) RTIMER_ARCH_SECOND/10  // time to wait between glossy floods [in RTC ticks]
+// glossy flood period is specified in RTC ticks to prevent loss of precision (dividing RTC and RAT cycles result in a float precision), so specifying it in RAT ticks would may result in a drift after sometime, resulting in glossy not to work
+
+// TODO decrase this number to least possible
+#define PROCESSING_TIME_IN_RTC             (uint32_t) 30                           // time required to wake up before glossy flood TX or RX time, to be able to process everything in correct time beforehand [in RTC ticks]
+
+#define RTC_TICKS_BETWEEN_FLOODS           (uint32_t) GLOSSY_FLOOD_TIME_PERIOD_IN_RTC - PROCESSING_TIME_IN_RTC // RTC ticks to wait between glossy floods [in RTC ticks]
+
+#define GLOSSY_FLOOD_TIME_PERIOD_IN_RAT    (uint32_t) GLOSSY_FLOOD_TIME_PERIOD_IN_RTC*PHI_0  // when RAT timer starts again, it starts from 0 and this time is the radio operation (TX or RX) time. It's done this way to prevent RAT overflow
 
 /* Packet TX Configuration */
 /* Packet RX Configuration */

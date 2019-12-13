@@ -26,6 +26,8 @@ extern rfc_CMD_FS_t RF_cmdFs;
 extern rfc_CMD_PROP_TX_t RF_cmdPropTx;
 extern rfc_CMD_PROP_RX_t RF_cmdPropRx;
 extern rfc_CMD_TX_TEST_t RF_cmdTxTest;
+extern rfc_CMD_SYNC_STOP_RAT_t RF_cmdSyncStopRat;
+extern rfc_CMD_SYNC_START_RAT_t RF_cmdSyncStartRat;
 
 
 #endif // _SMARTRF_SETTINGS_H_

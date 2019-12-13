@@ -247,3 +247,40 @@ rfc_CMD_TX_TEST_t RF_cmdTxTest =
     .syncWord = 0x930B51DE,
     .endTime = 0x00000000,
 };
+
+// CMD_SYNC_STOP_RAT
+// Synchronize and Stop Radio Timer Command
+rfc_CMD_SYNC_STOP_RAT_t RF_cmdSyncStopRat =
+{
+    .commandNo = 0x0809,
+    .status = 0x0000,
+    .pNextOp = 0, // INSERT APPLICABLE POINTER: (uint8_t*)&xxx
+    .startTime = 0x00000000,
+    .startTrigger.triggerType = 0x0,
+    .startTrigger.bEnaCmd = 0x0,
+    .startTrigger.triggerNo = 0x0,
+    .startTrigger.pastTrig = 0x0,
+    .condition.rule = 0x1,
+    .condition.nSkip = 0x0,
+    .__dummy0 = 0x0000,
+    .rat0 = 0x00000000
+};
+
+
+// CMD_SYNC_START_RAT
+// Synchrously Start Radio Timer Command
+rfc_CMD_SYNC_START_RAT_t RF_cmdSyncStartRat =
+{
+    .commandNo = 0x080A,
+    .status = 0x0000,
+    .pNextOp = 0, // INSERT APPLICABLE POINTER: (uint8_t*)&xxx
+    .startTime = 0x00000000,
+    .startTrigger.triggerType = 0x0,
+    .startTrigger.bEnaCmd = 0x0,
+    .startTrigger.triggerNo = 0x0,
+    .startTrigger.pastTrig = 0x0,
+    .condition.rule = 0x1,
+    .condition.nSkip = 0x0,
+    .__dummy0 = 0x0000,
+    .rat0 = 0x00000000
+};

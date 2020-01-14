@@ -5,17 +5,13 @@
 
 /* Glossy definitions */
 #define INITIATOR_ID    1
-#define NODE_ID    1
+#define NODE_ID    2
 
 #define GLOSSY_PAYLOAD_LEN 8
 #define GLOSSY_PAYLOAD_LEN_WITH_COUNT GLOSSY_PAYLOAD_LEN+1
 #define GLOSSY_N_TX                     3
 #define GLOSSY_T_SLOT                   (uint32_t) RF_convertMsToRatTicks(5) // in RAT ticks
-
-#define GLOSSY_FLOOD_TIME_PERIOD_IN_RTC        (uint32_t) RTIMER_ARCH_SECOND/10  // time to wait between glossy floods [in RTC ticks]
-#define PROCESSING_TIME_IN_RTC             (uint32_t) 30 // TODO decrase this number to least possible
-                                                         // time required to wake up before glossy flood TX or RX time, to be able to process everything in correct time beforehand [in RTC ticks]
-#define RTC_TICKS_BETWEEN_FLOODS           (uint32_t) GLOSSY_FLOOD_TIME_PERIOD_IN_RTC - PROCESSING_TIME_IN_RTC // RTC ticks to wait between glossy floods [in RTC ticks]
+#define GLOSSY_FLOOD_TIME                   (uint32_t) RF_convertMsToRatTicks(50) // in RAT ticks
 
 /* Packet RX Configuration */
 #define DATA_ENTRY_HEADER_SIZE 8  /* Constant header size of a Generic Data Entry */

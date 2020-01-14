@@ -30,10 +30,7 @@ static bool glossy_init = false;
 static bool glossy_stop_flag = false;
 
 // glossy time
-static uint32_t cmd_base_time_rtc;
 static uint32_t cmd_base_time_RAT;
-/* rtimer */
-static struct rtimer rtimer_timer;
 /* RF */
 static RF_Object rfObject;
 static RF_Handle rfHandle;
@@ -63,7 +60,9 @@ static uint32_t rxTimestamp;
 //static uint8_t packet[MAX_LENGTH + NUM_APPENDED_BYTES - 1]; /* The length byte is stored in a separate variable */
 
 static ratmr_t last_r0 = 0; 
-
+/*---------------------------------------------------------------------------*/
+/***** Functions definition *****/
+void schedule_next_flood();
 /*---------------------------------------------------------------------------*/
 /***** Timers Helper Functions *****/
 uint32_t RF_ratGetValue(void)
@@ -85,12 +84,71 @@ void enable_rtc_rat_sync()
 /***** Glossy helper Functions *****/
 void update_payload(uint8_t *payload)
 {
+  static int8_t i;
   // add glossy header (the c relay counter)
   payload_with_counter[0] = 0;
-  for(int i = 0; i < (uint8_t)GLOSSY_PAYLOAD_LEN_WITH_COUNT ; i++) {
+  for(i = 0; i < (uint8_t)GLOSSY_PAYLOAD_LEN_WITH_COUNT ; i++) {
     payload_with_counter[i+1] = payload[i]; //first byte reserved for header (c: the relay counter)
   }
   LOG_DBG("added counter byte to payload.\n");
+}
+/*---------------------------------------------------------------------------*/
+/***** RF Callback Functions *****/
+void tx_callback(RF_Handle h, RF_CmdHandle ch, RF_EventMask e)
+{
+    if (e & RF_EventTxDone || e & RF_EventCmdDone)
+    {
+      n_tx_count++;
+      if (n_tx_count == GLOSSY_N_TX) {
+        //schedule_next_flood();
+        return;
+      }
+      cmd_base_time_RAT += GLOSSY_T_SLOT;
+      RF_cmdPropTx.startTime = cmd_base_time_RAT;
+      RF_cmdPropTx.pPkt[0] = RF_cmdPropTx.pPkt[0] + 1; // increment c (glossy relay counter)
+      RF_postCmd(rfHandle, (RF_Op*)&RF_cmdPropTx,
+                                                 RF_PriorityHighest , &tx_callback, RF_EventCmdDone);
+    }
+}
+/*---------------------------------------------------------------------------*/
+void rx_callback(RF_Handle h, RF_CmdHandle ch, RF_EventMask e)
+{
+    if (e & RF_EventCmdDone)
+    {
+      /* Extract packet and timestamp (sfd time in RAT time) from incoming data */
+      /* Get current unhandled data entry */
+      currentDataEntry = RFQueue_getDataEntry();
+  
+      /* Handle the packet data, located at &currentDataEntry->data:
+       * - Length is the first byte with the current configuration
+       * - Data starts from the second byte */
+      //TODO use next line instead of defined value
+      //packetLength      = *(uint8_t*)(&currentDataEntry->data);
+      packetLength      = (uint8_t)GLOSSY_PAYLOAD_LEN_WITH_COUNT;
+      packetDataPointer = (uint8_t*)(&currentDataEntry->data + 1);
+  
+      /* Copy the payload + the status byte to the packet variable */
+      memcpy(payload_with_counter, packetDataPointer, (packetLength + 1));
+      
+      memcpy(&rxTimestamp, packetDataPointer + packetLength , 4);
+  
+      RFQueue_nextEntry();
+  
+      // setup the first retransmission - next retransmisions will be handled by tx_callback
+      cmd_base_time_RAT = rxTimestamp;
+      cmd_base_time_RAT += GLOSSY_T_SLOT;
+      RF_cmdPropTx.startTime = cmd_base_time_RAT;
+  
+      // TODO not needed right !
+      RF_cmdPropTx.pktLen = GLOSSY_PAYLOAD_LEN_WITH_COUNT ;
+      RF_cmdPropTx.pPkt = payload_with_counter; //TODO this may be a mistake
+
+      n_tx_count = 0;
+      RF_cmdPropTx.pPkt[0] = payload_with_counter[0] + 1; // increment c (glossy relay counter)
+      /* start first transmission - post other tx from callbacks*/
+      RF_postCmd(rfHandle, (RF_Op*)&RF_cmdPropTx,
+                                                 RF_PriorityHighest, &tx_callback, RF_EventCmdDone);
+    }
 }
 /*---------------------------------------------------------------------------*/
 /***** Glossy Callback Functions *****/
@@ -113,24 +171,21 @@ void schedule_next_flood()
   if (!glossy_init)
   {
     // INITIATOR: current time is calculated as base time
-    cmd_base_time_rtc = RTIMER_NOW();
     cmd_base_time_RAT = RF_ratGetValue()+2*GLOSSY_T_SLOT;
     glossy_init = true;
     // NON-INITIATOR
     RF_cmdPropRx.startTrigger.triggerType = TRIG_NOW;
   } else /* if(glossy_init) */ {
-    cmd_base_time_rtc += GLOSSY_FLOOD_TIME_PERIOD_IN_RTC;
     // INITIATOR
     if (IS_INITIATOR())
     {
-      cmd_base_time_RAT += 
+      cmd_base_time_RAT += GLOSSY_FLOOD_TIME;
     }
     // NON_INITIATOR
     else /* if (!IS_INITIATOR()) */
     {
       RF_cmdPropRx.startTrigger.triggerType = TRIG_ABSTIME;
-      cmd_base_time_RAT += 
-      // TODO rx_callback should update cmd_base_time_RAT = rxTimestamp
+      cmd_base_time_RAT += GLOSSY_FLOOD_TIME - 20; // start listen a bit before expected TX time //TODO make this minimal
     }
   }
 
@@ -149,10 +204,6 @@ void schedule_next_flood()
     RF_postCmd(rfHandle, (RF_Op*)&RF_cmdPropRx,
                                                RF_PriorityHighest , &rx_callback, RF_EventCmdDone);
   }
-
-  //schedule next flood callback
-  rtimer_set(&rtimer_timer, cmd_base_time_rtc+RTC_TICKS_BETWEEN_FLOODS, 0, schedule_next_flood, NULL);
-
 }
 /*---------------------------------------------------------------------------*/
 /***** Glossy Functions *****/
@@ -223,7 +274,7 @@ glossy_start(uint16_t initiator_id, uint16_t node_id, uint8_t *payload,
   enable_rtc_rat_sync(); //TODO maybe not needed
 
   // set payload
-  updated_payload(payload)
+  update_payload(payload);
 
   // start first flood
   schedule_next_flood();

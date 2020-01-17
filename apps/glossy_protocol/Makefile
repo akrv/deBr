@@ -9,7 +9,7 @@ MAKE_NET = MAKE_NET_NULLNET
 PROJECT_SOURCEFILES += glossy.c RFQueue.c
 MODULES_REL += ./smartrf_settings
 
-CONTIKI_PROJECT = glossy_test_app
+CONTIKI_PROJECT = glossy_test_app rx_tester 
 all: $(CONTIKI_PROJECT)
 CONTIKI = $(GLOSSY_DIR)/contiki-ng
 include $(CONTIKI)/Makefile.include

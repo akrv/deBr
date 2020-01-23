@@ -10,7 +10,7 @@
 #define GLOSSY_PAYLOAD_LEN 8
 #define GLOSSY_PAYLOAD_LEN_WITH_COUNT GLOSSY_PAYLOAD_LEN+1
 #define GLOSSY_N_TX                     3
-#define GLOSSY_T_SLOT                   (uint32_t) RF_convertMsToRatTicks(5) // in RAT ticks
+#define GLOSSY_T_SLOT                   (uint32_t) RF_convertMsToRatTicks(1) // in RAT ticks
 #define GLOSSY_FLOOD_TIME                   (uint32_t) RF_convertMsToRatTicks(50) // in RAT ticks
 
 /* Packet RX Configuration */

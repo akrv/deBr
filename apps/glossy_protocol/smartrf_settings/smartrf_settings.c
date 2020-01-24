@@ -114,11 +114,26 @@ rfc_CMD_PROP_RADIO_DIV_SETUP_t RF_cmdPropRadioDivSetup =
     .condition.rule = 0x1,
     .condition.nSkip = 0x0,
     .modulation.modType = 0x1,
-    .modulation.deviation = 0x2BC,
-    .symbolRate.preScale = 0x6,
-    .symbolRate.rateWord = 0x20000,
+    // ----------------------------
+    // 50kpbs 2-GFSK
+    .modulation.deviation = 0x64,
+    .symbolRate.preScale = 0xF,
+    .symbolRate.rateWord = 0x8000,
     .symbolRate.decimMode = 0x0,
-    .rxBw = 0x2F,
+    .rxBw = 0x24,
+    // 200kpbs 2-GFSK
+    //.modulation.deviation = 0x118,
+    //.symbolRate.preScale = 0xF,
+    //.symbolRate.rateWord = 0x20000,
+    //.symbolRate.decimMode = 0x0,
+    //.rxBw = 0x29,
+    // 500kpbs 2-GFSK
+    //.modulation.deviation = 0x2BC,
+    //.symbolRate.preScale = 0x6,
+    //.symbolRate.rateWord = 0x20000,
+    //.symbolRate.decimMode = 0x0,
+    //.rxBw = 0x2F,
+    // ----------------------------
     .preamConf.nPreamBytes = 0x4,
     .preamConf.preamMode = 0x0,
     .formatConf.nSwBits = 0x20,

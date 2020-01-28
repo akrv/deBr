@@ -108,7 +108,7 @@ void enable_rtc_rat_sync()
 /***** Glossy helper Functions *****/
 void update_payload(uint8_t *payload)
 {
-  static int8_t i;
+  static uint8_t i;
   // add glossy header (the c relay counter)
   payload_with_counter[0] = 0;
   for(i = 0; i < (uint8_t)GLOSSY_PAYLOAD_LEN_WITH_COUNT ; i++) {
@@ -286,8 +286,10 @@ glossy_start(uint16_t initiator_id, uint16_t node_id, uint8_t *payload,
                           GLOSSY_PAYLOAD_LEN_WITH_COUNT + NUM_APPENDED_BYTES))
   {
       /* Failed to allocate space for all data entries */
+      LOG_ERR("Failed to allocate space for all data entries.\n");
       while(1);
   }
+
   /* Set the Data Entity queue for received data */
   RF_cmdPropRx.pQueue = &dataQueue;
   /* Discard ignored packets from Rx queue */
@@ -322,6 +324,7 @@ glossy_start(uint16_t initiator_id, uint16_t node_id, uint8_t *payload,
   #endif /* GLOSSY_CONF_COLLECT_STATS */
 
   // start first flood
+  LOG_DBG("Scheduling first flood.\n");
   schedule_next_flood();
 }
 

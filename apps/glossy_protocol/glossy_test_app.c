@@ -35,13 +35,16 @@ PROCESS_THREAD(glossy_test_process, ev, data)
 
   // print statistics
   #if GLOSSY_CONF_COLLECT_STATS
-  while(1)
+  if (INITIATOR_ID != NODE_ID)
   {
-    etimer_set(&et, CLOCK_SECOND);
-    PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&et));
-    LOG_DBG("crc ok packets: %lu\n", glossy_get_n_pkts_crcok());
-    LOG_DBG("no. of all packets (with corrupted ones): %lu\n",  glossy_get_n_pkts());
-    LOG_DBG("packet error rate: %u\n", glossy_get_per());
+    while(1)
+    {
+      etimer_set(&et, CLOCK_SECOND);
+      PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&et));
+      LOG_DBG("crc ok packets: %lu\n", glossy_get_n_pkts_crcok());
+      LOG_DBG("no. of all packets (with corrupted ones): %lu\n",  glossy_get_n_pkts());
+      LOG_DBG("packet error rate: %u\n", glossy_get_per());
+    }
   }
   #endif /* GLOSSY_CONF_COLLECT_STATS */
 

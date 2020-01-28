@@ -28,16 +28,6 @@
 
 /* Packet TX Configuration */
 
-/* Packet RX Configuration */
-#define DATA_ENTRY_HEADER_SIZE 8  /* Constant header size of a Generic Data Entry */
-#define MAX_LENGTH             30 /* Max length byte the radio will accept */
-#define NUM_DATA_ENTRIES       2  /* NOTE: Only two data entries supported at the moment */
-#define NUM_APPENDED_BYTES     5  /* The Data Entries data field will contain:
-                                   * 1 Header byte (RF_cmdPropRx.rxConf.bIncludeHdr = 0x1)
-                                   * Max 30 payload bytes
-                                   * 1 status byte (RF_cmdPropRx.rxConf.bAppendStatus = 0x1) //TODO removed
-                                   * 4 Timestamp */
-
 
 /***** Prototypes *****/
 //static void callback(RF_Handle h, RF_CmdHandle ch, RF_EventMask e);
@@ -200,7 +190,7 @@ PROCESS_THREAD(direct_radio_process, ev, data)
       //LOG_INFO("Packet: ");
       //for (i = 0; i < GLOSSY_PAYLOAD_LEN_WITH_COUNT ; i++)
       //{
-          //printf("%u", packet[i]);
+      //  printf("%u", packet[i]);
       //}
       //printf("\n");
 

@@ -28,7 +28,33 @@
 /* glossy */
 static bool glossy_init = false;
 static bool glossy_stop_flag = false;
-
+// glossy statistics
+#if GLOSSY_CONF_COLLECT_STATS
+typedef struct {
+  struct {
+  /* --- statistics only, otherwise not relevant for Glossy --- */
+  /* stats of the last flood */
+  uint8_t  last_flood_relay_cnt;                    /* relay cnt on first rx */
+  int8_t   last_flood_rssi_noise;
+  int16_t  last_flood_rssi_sum;
+  uint8_t  last_flood_rssi[3];
+  uint8_t  last_flood_hops[3];
+  uint8_t  last_flood_n_rx_started;            /* # preamble+sync detections */
+  uint8_t  last_flood_n_rx_fail;                      /* header or CRC wrong */
+  uint8_t  already_counted;
+  rtimer_clock_t last_flood_duration;                /* total flood duration */
+  rtimer_clock_t last_flood_t_to_rx;              /* time to first reception */
+  /* global stats since last reset of the node */
+  //uint32_t pkt_cnt;           /* total # of received packets (preamble+sync) */
+  uint32_t pkt_cnt_crc_Nok;        /* total # of received packets with CRC error */
+  uint32_t pkt_cnt_crc_ok;         /* total # of received packets with CRC ok */
+  uint32_t flood_cnt;    /* total # of floods (with >=1x preamble+sync det.) */
+  uint32_t flood_cnt_success;      /* total # floods with at least 1x CRC ok */
+  uint16_t error_cnt;              /* total number of errors */
+  } stats;
+} glossy_state_t;
+static glossy_state_t g;
+#endif /* GLOSSY_CONF_COLLECT_STATS */
 // glossy time
 static uint32_t cmd_base_time_RAT;
 /* RF */
@@ -44,7 +70,7 @@ static uint8_t n_tx_count;
  * Pragmas are needed to make sure this buffer is 4 byte aligned (requirement from the RF Core) */
 static uint8_t
 rxDataEntryBuffer[RF_QUEUE_DATA_ENTRY_BUFFER_SIZE(NUM_DATA_ENTRIES,
-                                                  MAX_LENGTH,
+                                                  GLOSSY_PAYLOAD_LEN_WITH_COUNT,
                                                   NUM_APPENDED_BYTES)]
                                                   __attribute__((aligned(4)));
 
@@ -146,6 +172,17 @@ void rx_callback(RF_Handle h, RF_CmdHandle ch, RF_EventMask e)
       RF_postCmd(rfHandle, (RF_Op*)&RF_cmdPropTx,
                                                  RF_PriorityHighest, &tx_callback, RF_EventCmdDone);
     }
+
+#if GLOSSY_CONF_COLLECT_STATS
+    if (e & RF_EventRxOk)
+    {
+      g.stats.pkt_cnt_crc_ok++;
+    }
+    else if (e & RF_EventRxNOk)
+    {
+      g.stats.pkt_cnt_crc_Nok++;
+    }
+#endif
 }
 /*---------------------------------------------------------------------------*/
 /***** Glossy Callback Functions *****/
@@ -205,7 +242,7 @@ void schedule_next_flood()
     //LOG_DBG("switch to RX\n");
     RF_cmdPropRx.startTime = cmd_base_time_RAT;
     RF_postCmd(rfHandle, (RF_Op*)&RF_cmdPropRx,
-                                               RF_PriorityHighest , &rx_callback, RF_EventCmdDone);
+                                               RF_PriorityHighest , &rx_callback, RF_EventCmdDone | RF_EventRxOk | RF_EventRxNOk);
   }
 }
 /*---------------------------------------------------------------------------*/
@@ -220,7 +257,7 @@ glossy_start(uint16_t initiator_id, uint16_t node_id, uint8_t *payload,
   /* Request access to the radio */
   RF_Params_init(&rfParams);
   rfHandle = RF_open(&rfObject, &RF_prop, (RF_RadioSetup*)&RF_cmdPropRadioDivSetup, &rfParams);
-  LOG_INFO("RF_open executed.\n");
+  LOG_DBG("RF_open executed.\n");
 
   RF_cmdSyncStartRat.rat0 = last_r0;
   RF_postCmd(rfHandle, (RF_Op*)&RF_cmdSyncStartRat, RF_PriorityHighest , NULL, 0);
@@ -246,7 +283,7 @@ glossy_start(uint16_t initiator_id, uint16_t node_id, uint8_t *payload,
                           rxDataEntryBuffer,
                           sizeof(rxDataEntryBuffer),
                           NUM_DATA_ENTRIES,
-                          MAX_LENGTH + NUM_APPENDED_BYTES))
+                          GLOSSY_PAYLOAD_LEN_WITH_COUNT + NUM_APPENDED_BYTES))
   {
       /* Failed to allocate space for all data entries */
       while(1);
@@ -279,6 +316,11 @@ glossy_start(uint16_t initiator_id, uint16_t node_id, uint8_t *payload,
   // set payload
   update_payload(payload);
 
+  #if GLOSSY_CONF_COLLECT_STATS
+  g.stats.pkt_cnt_crc_Nok = 0;
+  g.stats.pkt_cnt_crc_ok = 0;
+  #endif /* GLOSSY_CONF_COLLECT_STATS */
+
   // start first flood
   schedule_next_flood();
 }
@@ -290,3 +332,16 @@ uint8_t glossy_stop(void)
   return 0;
 }
 /*---------------------------------------------------------------------------*/
+/***** Glossy Statistics Functions *****/
+uint16_t glossy_get_per(void)
+{
+  return (uint16_t) g.stats.pkt_cnt_crc_Nok/(g.stats.pkt_cnt_crc_ok+g.stats.pkt_cnt_crc_Nok);
+}
+uint32_t glossy_get_n_pkts(void)
+{
+  return g.stats.pkt_cnt_crc_ok + g.stats.pkt_cnt_crc_Nok;
+}
+uint32_t glossy_get_n_pkts_crcok(void)
+{
+  return g.stats.pkt_cnt_crc_ok;
+}

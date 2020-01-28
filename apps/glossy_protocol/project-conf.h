@@ -9,10 +9,10 @@
 
 #define GLOSSY_PAYLOAD_LEN 8
 #define GLOSSY_PAYLOAD_LEN_WITH_COUNT GLOSSY_PAYLOAD_LEN+1
-#define GLOSSY_N_TX                     1
+#define GLOSSY_N_TX                     3
 #define GLOSSY_FLOOD_TIME                   (uint32_t) RF_convertMsToRatTicks(50) // Time between floods [in RAT ticks]
 // ----------------------------
-#define GLOSSY_T_SLOT                       (uint32_t) RF_convertMsToRatTicks(1) // Time between Pkts in Floods [in RAT ticks]
+#define GLOSSY_T_SLOT                       (uint32_t) RF_convertMsToRatTicks(5) // Time between Pkts in Floods [in RAT ticks]
 // configure Rate in smartrf_settings.c
 // RATE            PKT BYTES        TIME
 // 50kpbs 2-GFSK
@@ -31,6 +31,7 @@
 //                   128              1
 //                   256              1
 // ----------------------------
+#define GLOSSY_CONF_COLLECT_STATS 1
 
 /* Packet RX Configuration */
 #define DATA_ENTRY_HEADER_SIZE 8  /* Constant header size of a Generic Data Entry */

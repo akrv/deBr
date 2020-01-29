@@ -111,7 +111,7 @@ void update_payload(uint8_t *payload)
   static uint8_t i;
   // add glossy header (the c relay counter)
   payload_with_counter[0] = 0;
-  for(i = 0; i < (uint8_t)GLOSSY_PAYLOAD_LEN_WITH_COUNT ; i++) {
+  for(i = 0; i < GLOSSY_PAYLOAD_LEN; i++) {
     payload_with_counter[i+1] = payload[i]; //first byte reserved for header (c: the relay counter)
   }
   LOG_DBG("added counter byte to payload.\n");

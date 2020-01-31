@@ -14,22 +14,22 @@
 // ----------------------------
 #define GLOSSY_T_SLOT                       (uint32_t) RF_convertMsToRatTicks(5) // Time between Pkts in Floods [in RAT ticks]
 // configure Rate in smartrf_settings.c
-// RATE            PKT BYTES        TIME(ms) one packet        Flood_Time
-// 50kpbs 2-GFSK
-//                   8                1
-//                   64               1
-//                   128              1
-//                   256              1
-// 200kpbs 2-GFSK
-//                   8                1
-//                   64               1
-//                   128              1
-//                   256              1
-// 500kpbs 2-GFSK
-//                   8                1
-//                   64               1
-//                   128              1
-//                   256              1
+// RATE            PKT BYTES        TIME(ms) one packet
+// 50kpbs 2-GFSK, 25 KHz deviation
+//                   8                   3.8
+//                   64                  12.8
+//                   128                 22.9
+//                   255                 43.3
+// 200kpbs 2-GFSK, 70 KHz deviation
+//                   8                   1.2
+//                   64                  3.7
+//                   128                 6.2
+//                   255                 11.2
+// 500kpbs 2-GFSK, 175 KHz deviation
+//                   8                   0.56
+//                   64                  1.5
+//                   128                 2.4
+//                   255                 4.3
 // ----------------------------
 #define GLOSSY_CONF_COLLECT_STATS 1
 

@@ -1,6 +1,7 @@
 #include "contiki.h"
 #include "watchdog.h"
 #include "rtimer.h"
+#include "dev/leds.h"
 
 /* Log configuration */
 #include "sys/log.h"
@@ -124,8 +125,10 @@ void tx_callback(RF_Handle h, RF_CmdHandle ch, RF_EventMask e)
     {
       n_tx_count++;
       if (n_tx_count >= GLOSSY_N_TX) {
+        leds_off(LEDS_ALL);
         schedule_next_flood();
       } else {
+        leds_on(LEDS_ALL);
         cmd_base_time_RAT += GLOSSY_T_SLOT;
         RF_cmdPropTx.startTime = cmd_base_time_RAT;
         RF_cmdPropTx.pPkt[0] += 1; // increment c (glossy relay counter)

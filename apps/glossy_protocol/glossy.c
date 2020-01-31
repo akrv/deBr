@@ -85,7 +85,10 @@ static uint32_t rxTimestamp;
 //static uint8_t packet[MAX_LENGTH + NUM_APPENDED_BYTES - 1]; /* The length byte is stored in a separate variable */
 
 static ratmr_t last_r0 = 0; 
-/*---------------------------------------------------------------------------*/
+
+#define TX_FLAGS RF_EventCmdDone
+#define RX_FLAGS RF_EventCmdDone | RF_EventRxOk | RF_EventRxNOk
+
 /***** Functions definition *****/
 void schedule_next_flood();
 /*---------------------------------------------------------------------------*/
@@ -133,7 +136,7 @@ void tx_callback(RF_Handle h, RF_CmdHandle ch, RF_EventMask e)
         RF_cmdPropTx.startTime = cmd_base_time_RAT;
         RF_cmdPropTx.pPkt[0] += 1; // increment c (glossy relay counter)
         RF_postCmd(rfHandle, (RF_Op*)&RF_cmdPropTx,
-                                                   RF_PriorityHighest , &tx_callback, RF_EventCmdDone);
+                                                   RF_PriorityHighest , &tx_callback, TX_FLAGS);
       }
     }
 }
@@ -173,7 +176,7 @@ void rx_callback(RF_Handle h, RF_CmdHandle ch, RF_EventMask e)
       RF_cmdPropTx.pPkt[0] += 1; // increment c (glossy relay counter)
       /* start first transmission - post other tx from callbacks*/
       RF_postCmd(rfHandle, (RF_Op*)&RF_cmdPropTx,
-                                                 RF_PriorityHighest, &tx_callback, RF_EventCmdDone);
+                                                 RF_PriorityHighest, &tx_callback, TX_FLAGS);
     }
 
 #if GLOSSY_CONF_COLLECT_STATS
@@ -238,14 +241,14 @@ void schedule_next_flood()
     RF_cmdPropTx.startTime = cmd_base_time_RAT;
     /* start first transmission - post other tx from callbacks*/
     RF_postCmd(rfHandle, (RF_Op*)&RF_cmdPropTx,
-                                               RF_PriorityHighest , &tx_callback, RF_EventCmdDone);
+                                               RF_PriorityHighest , &tx_callback, TX_FLAGS);
   }
   else /* if (!IS_INITIATOR()) */
   {
     //LOG_DBG("switch to RX\n");
     RF_cmdPropRx.startTime = cmd_base_time_RAT;
     RF_postCmd(rfHandle, (RF_Op*)&RF_cmdPropRx,
-                                               RF_PriorityHighest , &rx_callback, RF_EventCmdDone | RF_EventRxOk | RF_EventRxNOk);
+                                               RF_PriorityHighest , &rx_callback, RX_FLAGS);
   }
 }
 /*---------------------------------------------------------------------------*/

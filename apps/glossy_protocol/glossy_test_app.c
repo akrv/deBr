@@ -51,6 +51,14 @@ PROCESS_THREAD(glossy_test_process, ev, data)
   }
   #endif /* GLOSSY_CONF_COLLECT_STATS */
 
+  
+  // Run glossy for one second then stop
+  //LOG_INFO("Run glossy for 1 second.\n");
+  //etimer_set(&et, CLOCK_SECOND);
+  //PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&et));
+  //glossy_stop();
+  //LOG_INFO("Glossy Stopped.\n");
+
   PROCESS_END();
 }
 /*---------------------------------------------------------------------------*/

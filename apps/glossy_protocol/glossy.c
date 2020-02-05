@@ -202,11 +202,10 @@ void schedule_next_flood()
   //    for RX: calculate the difference the first Time then add this difference later
   //            (for now just use the difference in the first time)
 
-  // 3- Handle everything in RAT, if calculates the time passed on it's own
+  // 3- Handle everything in RAT, if calculates the time passed on it's own [USED METHOD]
   //    (when RAT wake up syncrhonized to RX and rat0 parameter is correct)
 
   if (glossy_stop_flag) {
-    LOG_DBG("glossy stopped.\n");
     glossy_stop_flag = false;
     return;
   }

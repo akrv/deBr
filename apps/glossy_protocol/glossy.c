@@ -230,6 +230,13 @@ void schedule_next_flood()
     {
       RF_cmdPropRx.startTrigger.triggerType = TRIG_ABSTIME;
       cmd_base_time_RAT = rxTimestamp + GLOSSY_FLOOD_TIME; // start listen a bit before expected TX time //TODO make this minimal
+      // check if the node got out of sync because it missed one of the floods
+      // TODO later change this to an x number of GLOSSY_FLOOD_TIME based on the current time,
+      //  to prevent RX cmd from using the radio resources for too long
+      if ( cmd_base_time_RAT < RF_ratGetValue())
+      {
+        RF_cmdPropRx.startTrigger.triggerType = TRIG_NOW;
+      }
     }
   }
 

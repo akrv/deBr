@@ -7,9 +7,9 @@
 #define INITIATOR_ID    1
 #define NODE_ID    1
 
-#define GLOSSY_PAYLOAD_LEN 254 // Max 254, 1 byte used for Hops count and Radio max is 255
+#define GLOSSY_PAYLOAD_LEN 8 // Max 254, 1 byte used for Hops count and Radio max is 255
 #define GLOSSY_PAYLOAD_LEN_WITH_COUNT GLOSSY_PAYLOAD_LEN+1
-#define GLOSSY_N_TX                     3
+#define GLOSSY_N_TX                   2
 #define GLOSSY_FLOOD_TIME                   (uint32_t) RF_convertMsToRatTicks(50) // Time between floods [in RAT ticks]
 // ----------------------------
 #define GLOSSY_T_SLOT                       (uint32_t) RF_convertMsToRatTicks(5) // Time between Pkts in Floods [in RAT ticks]

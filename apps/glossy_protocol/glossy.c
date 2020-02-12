@@ -122,6 +122,9 @@ void update_payload(uint8_t *payload)
 }
 /*---------------------------------------------------------------------------*/
 /***** RF Callback Functions *****/
+void tx_callback(RF_Handle h, RF_CmdHandle ch, RF_EventMask e);
+void rx_callback(RF_Handle h, RF_CmdHandle ch, RF_EventMask e);
+/*---------------------------------------------------------------------------*/
 void tx_callback(RF_Handle h, RF_CmdHandle ch, RF_EventMask e)
 {
     if (e & RF_EventTxDone || e & RF_EventCmdDone)
@@ -132,10 +135,9 @@ void tx_callback(RF_Handle h, RF_CmdHandle ch, RF_EventMask e)
         schedule_next_flood();
       } else {
         leds_on(LEDS_ALL);
-        RF_cmdPropTx.startTime += GLOSSY_T_SLOT;
-        RF_cmdPropTx.pPkt[0] += 1; // increment c (glossy relay counter)
-        RF_postCmd(rfHandle, (RF_Op*)&RF_cmdPropTx,
-                                                   RF_PriorityHighest , &tx_callback, TX_FLAGS);
+        RF_cmdPropRx.startTime = RF_cmdPropTx.startTime + GLOSSY_T_SLOT;
+        RF_postCmd(rfHandle, (RF_Op*)&RF_cmdPropRx,
+                                                   RF_PriorityHighest , &rx_callback, RX_FLAGS);
       }
     }
 }
@@ -164,8 +166,10 @@ void rx_callback(RF_Handle h, RF_CmdHandle ch, RF_EventMask e)
       RFQueue_nextEntry();
   
       // setup the first retransmission - next retransmisions will be handled by tx_callback
-      cmd_base_time_RAT = rxTimestamp;
-      RF_cmdPropTx.startTime = cmd_base_time_RAT + GLOSSY_T_SLOT;
+      if (IS_INITIATOR() && n_tx_count==0) {
+        cmd_base_time_RAT = rxTimestamp ;
+      }
+      RF_cmdPropTx.startTime = rxTimestamp + GLOSSY_T_SLOT;
   
       // TODO not needed right !
       RF_cmdPropTx.pktLen = GLOSSY_PAYLOAD_LEN_WITH_COUNT ;

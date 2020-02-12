@@ -132,8 +132,7 @@ void tx_callback(RF_Handle h, RF_CmdHandle ch, RF_EventMask e)
         schedule_next_flood();
       } else {
         leds_on(LEDS_ALL);
-        cmd_base_time_RAT += GLOSSY_T_SLOT;
-        RF_cmdPropTx.startTime = cmd_base_time_RAT;
+        RF_cmdPropTx.startTime += GLOSSY_T_SLOT;
         RF_cmdPropTx.pPkt[0] += 1; // increment c (glossy relay counter)
         RF_postCmd(rfHandle, (RF_Op*)&RF_cmdPropTx,
                                                    RF_PriorityHighest , &tx_callback, TX_FLAGS);
@@ -166,8 +165,7 @@ void rx_callback(RF_Handle h, RF_CmdHandle ch, RF_EventMask e)
   
       // setup the first retransmission - next retransmisions will be handled by tx_callback
       cmd_base_time_RAT = rxTimestamp;
-      cmd_base_time_RAT += GLOSSY_T_SLOT;
-      RF_cmdPropTx.startTime = cmd_base_time_RAT;
+      RF_cmdPropTx.startTime = cmd_base_time_RAT + GLOSSY_T_SLOT;
   
       // TODO not needed right !
       RF_cmdPropTx.pktLen = GLOSSY_PAYLOAD_LEN_WITH_COUNT ;
@@ -214,7 +212,7 @@ void schedule_next_flood()
   {
     LOG_DBG("Init Glossy first flood time.\n");
     // INITIATOR: current time is calculated as base time
-    cmd_base_time_RAT = RF_ratGetValue()+2*GLOSSY_T_SLOT;
+    cmd_base_time_RAT = RF_ratGetValue()+2*GLOSSY_T_SLOT; // some time that is far enough for this processing to be done
     glossy_init = true;
     // NON-INITIATOR
     RF_cmdPropRx.startTrigger.triggerType = TRIG_NOW;
@@ -228,14 +226,7 @@ void schedule_next_flood()
     else /* if (!IS_INITIATOR()) */
     {
       RF_cmdPropRx.startTrigger.triggerType = TRIG_ABSTIME;
-      cmd_base_time_RAT = rxTimestamp + GLOSSY_FLOOD_TIME; // start listen a bit before expected TX time //TODO make this minimal
-      // check if the node got out of sync because it missed one of the floods
-      // TODO later change this to an x number of GLOSSY_FLOOD_TIME based on the current time,
-      //  to prevent RX cmd from using the radio resources for too long
-      if ( cmd_base_time_RAT < RF_ratGetValue())
-      {
-        RF_cmdPropRx.startTrigger.triggerType = TRIG_NOW;
-      }
+      cmd_base_time_RAT += GLOSSY_FLOOD_TIME; // start listen a bit before expected TX time //TODO make this minimal
     }
   }
 

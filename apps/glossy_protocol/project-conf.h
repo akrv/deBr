@@ -10,10 +10,10 @@
 #define GLOSSY_PAYLOAD_LEN 8 // Max 254, 1 byte used for Hops count and Radio max is 255
 #define GLOSSY_PAYLOAD_LEN_WITH_COUNT GLOSSY_PAYLOAD_LEN+1
 #define GLOSSY_N_TX                   2
-#define GLOSSY_FLOOD_TIME                   (uint32_t) RF_convertMsToRatTicks(50) // Time between floods [in RAT ticks]
+#define GLOSSY_FLOOD_TIME                   (uint32_t) RF_convertMsToRatTicks(100) // Time between floods [in RAT ticks]
 // ----------------------------
-#define GLOSSY_T_SLOT                       (uint32_t) RF_convertMsToRatTicks(5) // Time between Pkts in Floods [in RAT ticks]
-#define ABORT_RX_CMD_REL_TIME_RAT           (uint32_t) RF_convertMsToRatTicks(6)
+#define GLOSSY_T_SLOT                       (uint32_t) RF_convertMsToRatTicks(10) // Time between Pkts in Floods [in RAT ticks]
+#define ABORT_RX_CMD_REL_TIME_RAT           (uint32_t) RF_convertMsToRatTicks(12)
 // configure Rate in smartrf_settings.c
 // RATE            PKT BYTES        TIME(ms) one packet
 // 50kpbs 2-GFSK, 25 KHz deviation

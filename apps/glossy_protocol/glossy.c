@@ -136,6 +136,8 @@ void tx_callback(RF_Handle h, RF_CmdHandle ch, RF_EventMask e)
       } else {
         leds_on(LEDS_ALL);
         RF_cmdPropRx.startTime = RF_cmdPropTx.startTime + GLOSSY_T_SLOT;
+        RF_cmdPropRx.endTrigger.triggerType = TRIG_REL_START;
+        RF_cmdPropRx.endTime = ABORT_RX_CMD_REL_TIME_RAT;
         RF_postCmd(rfHandle, (RF_Op*)&RF_cmdPropRx,
                                                    RF_PriorityHighest , &rx_callback, RX_FLAGS);
       }
@@ -248,6 +250,7 @@ void schedule_next_flood()
   {
     //LOG_DBG("switch to RX\n");
     RF_cmdPropRx.startTime = cmd_base_time_RAT;
+    RF_cmdPropRx.endTrigger.triggerType = TRIG_NEVER;
     RF_postCmd(rfHandle, (RF_Op*)&RF_cmdPropRx,
                                                RF_PriorityHighest , &rx_callback, RX_FLAGS);
   }

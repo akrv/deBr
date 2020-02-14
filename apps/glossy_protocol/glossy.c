@@ -166,7 +166,7 @@ void rx_callback(RF_Handle h, RF_CmdHandle ch, RF_EventMask e)
       RFQueue_nextEntry();
   
       // setup the first retransmission - next retransmisions will be handled by tx_callback
-      if (IS_INITIATOR() && n_tx_count==0) {
+      if (!IS_INITIATOR() && n_tx_count==0) {
         cmd_base_time_RAT = rxTimestamp ;
       }
       RF_cmdPropTx.startTime = rxTimestamp + GLOSSY_T_SLOT;
@@ -266,6 +266,11 @@ glossy_start(uint16_t initiator_id, uint16_t node_id, uint8_t *payload,
   rfHandle = RF_open(&rfObject, &RF_prop, (RF_RadioSetup*)&RF_cmdPropRadioDivSetup, &rfParams);
   LOG_DBG("RF_open executed.\n");
 
+  // Setup and execute RTC and RAT sync cmd
+  /* Enable output RTC clock for Radio Timer Synchronization */
+  enable_rtc_rat_sync(); //TODO maybe not needed
+  RF_cmdSyncStartRat.startTrigger.pastTrig = 1;
+  RF_cmdSyncStartRat.startTrigger.triggerType = TRIG_NOW;
   RF_cmdSyncStartRat.rat0 = last_r0;
   RF_postCmd(rfHandle, (RF_Op*)&RF_cmdSyncStartRat, RF_PriorityHighest , NULL, 0);
   //while (!(RF_cmdSyncStartRat.status &  RF_EventCmdDone));
@@ -314,13 +319,6 @@ glossy_start(uint16_t initiator_id, uint16_t node_id, uint8_t *payload,
   RF_cmdPropRx.pktConf.bRepeatOk = 0;
   RF_cmdPropRx.pktConf.bRepeatNok = 0;
   RF_cmdPropRx.pktConf.bFsOff = 0;
-
-  // Setup RTC and RAT sync cmd
-  RF_cmdSyncStartRat.startTrigger.pastTrig = 1;
-  RF_cmdSyncStartRat.startTrigger.triggerType = TRIG_NOW;
-
-  /* Enable output RTC clock for Radio Timer Synchronization */
-  enable_rtc_rat_sync(); //TODO maybe not needed
 
   // set payload
   update_payload(payload);

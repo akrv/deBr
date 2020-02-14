@@ -262,6 +262,7 @@ glossy_start(uint16_t initiator_id, uint16_t node_id, uint8_t *payload,
 
   /* Setup RF */
   /* Request access to the radio */
+  rfParams.nInactivityTimeout = 200; //200 us
   RF_Params_init(&rfParams);
   rfHandle = RF_open(&rfObject, &RF_prop, (RF_RadioSetup*)&RF_cmdPropRadioDivSetup, &rfParams);
   LOG_DBG("RF_open executed.\n");

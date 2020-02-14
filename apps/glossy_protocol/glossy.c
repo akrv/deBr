@@ -127,7 +127,7 @@ void rx_callback(RF_Handle h, RF_CmdHandle ch, RF_EventMask e);
 /*---------------------------------------------------------------------------*/
 void tx_callback(RF_Handle h, RF_CmdHandle ch, RF_EventMask e)
 {
-    if (e & RF_EventTxDone || e & RF_EventCmdDone)
+    if (e & RF_EventCmdDone)
     {
       n_tx_count++;
       if (n_tx_count >= GLOSSY_N_TX) {
@@ -146,7 +146,7 @@ void tx_callback(RF_Handle h, RF_CmdHandle ch, RF_EventMask e)
 /*---------------------------------------------------------------------------*/
 void rx_callback(RF_Handle h, RF_CmdHandle ch, RF_EventMask e)
 {
-    if (e & RF_EventCmdDone)
+    if (e & RF_EventRxOk)
     {
       /* Extract packet and timestamp (sfd time in RAT time) from incoming data */
       /* Get current unhandled data entry */
@@ -181,6 +181,9 @@ void rx_callback(RF_Handle h, RF_CmdHandle ch, RF_EventMask e)
       /* start first transmission - post other tx from callbacks*/
       RF_postCmd(rfHandle, (RF_Op*)&RF_cmdPropTx,
                                                  RF_PriorityHighest, &tx_callback, TX_FLAGS);
+    } else {
+      // RX failed, schedule next flood
+      schedule_next_flood();
     }
 
 #if GLOSSY_CONF_COLLECT_STATS
@@ -250,7 +253,11 @@ void schedule_next_flood()
   {
     //LOG_DBG("switch to RX\n");
     RF_cmdPropRx.startTime = cmd_base_time_RAT;
+
+    //TODO this can be handled in a better way, maybe a multiple of GLOSSY_FLOOD_TIME
+    // or something that won't keep the radio busy for a long time
     RF_cmdPropRx.endTrigger.triggerType = TRIG_NEVER;
+
     RF_postCmd(rfHandle, (RF_Op*)&RF_cmdPropRx,
                                                RF_PriorityHighest , &rx_callback, RX_FLAGS);
   }

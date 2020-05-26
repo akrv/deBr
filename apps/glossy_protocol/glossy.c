@@ -182,6 +182,12 @@ void rx_callback(RF_Handle h, RF_CmdHandle ch, RF_EventMask e)
       RF_postCmd(rfHandle, (RF_Op*)&RF_cmdPropTx,
                                                  RF_PriorityHighest, &tx_callback, TX_FLAGS);
     } else {
+      /* 
+      TODO
+      If N_TX is bigger than one then schedule next RX on the next T slot.
+      Because a CRC error means that the node didn't receive the packet,
+      but it can receive it correctly during the same flood
+      */
       // RX failed, schedule next flood
       schedule_next_flood();
     }

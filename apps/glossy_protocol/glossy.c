@@ -189,15 +189,24 @@ void rx_callback(RF_Handle h, RF_CmdHandle ch, RF_EventMask e)
       /* start first transmission - post other tx from callbacks*/
       RF_postCmd(rfHandle, (RF_Op*)&RF_cmdPropTx,
                                                  RF_PriorityHighest, &tx_callback, TX_FLAGS);
-    } else {
+    } else {  // TODO add Event condition
+              //} else if (e & RF_EventRxNOk) {
+      // RX failed, schedule next flood
       /* 
-      TODO
+      IF Non-initiator node packet got corrupted
       If N_TX is bigger than one then schedule next RX on the next T slot.
       Because a CRC error means that the node didn't receive the packet,
       but it can receive it correctly during the same flood
       */
-      // RX failed, schedule next flood
-      schedule_next_flood();
+      if (!IS_INITIATOR()){
+        RF_cmdPropRx.startTrigger.triggerType = TRIG_ABSTIME;
+        RF_cmdPropRx.startTime = RF_cmdPropRx.startTime + 2*GLOSSY_T_SLOT;
+        RF_postCmd(rfHandle, (RF_Op*)&RF_cmdPropRx,
+                                                   RF_PriorityHighest , &rx_callback, RX_FLAGS);
+      } else /* if (IS_INITIATOR()) */ {
+        // TODO if there are some flood rounds remaining (T slots) then schedule TX with previous packet
+        schedule_next_flood();
+      }
     }
 
 #if GLOSSY_CONF_COLLECT_STATS

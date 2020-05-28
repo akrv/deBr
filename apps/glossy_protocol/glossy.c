@@ -67,6 +67,9 @@ static uint8_t payload_with_counter[GLOSSY_PAYLOAD_LEN_WITH_COUNT];
 
 static uint8_t n_tx_count;
 
+static bool flood_all_counted = false;
+static bool flood_success_counted = false;
+
 /* Buffer which contains all Data Entries for receiving data.
  * Pragmas are needed to make sure this buffer is 4 byte aligned (requirement from the RF Core) */
 static uint8_t
@@ -146,6 +149,11 @@ void tx_callback(RF_Handle h, RF_CmdHandle ch, RF_EventMask e)
 /*---------------------------------------------------------------------------*/
 void rx_callback(RF_Handle h, RF_CmdHandle ch, RF_EventMask e)
 {
+    if (flood_all_counted == false)
+    {
+      flood_all_counted = true;
+      g.stats.flood_cnt++;
+    }
     if (e & RF_EventRxOk)
     {
       /* Extract packet and timestamp (sfd time in RAT time) from incoming data */
@@ -218,6 +226,9 @@ void schedule_next_flood()
   // 3- Handle everything in RAT, if calculates the time passed on it's own [USED METHOD]
   //    (when RAT wake up syncrhonized to RX and rat0 parameter is correct)
 
+  flood_all_counted = false;
+  flood_success_counted = false;
+
   if (glossy_stop_flag) {
     glossy_stop_flag = false;
     return;
@@ -225,7 +236,7 @@ void schedule_next_flood()
 
   if (!glossy_init)
   {
-    LOG_DBG("Init Glossy first flood time.\n");
+    //LOG_DBG("Init Glossy first flood time.\n");
     // INITIATOR: current time is calculated as base time
     cmd_base_time_RAT = RF_ratGetValue()+2*GLOSSY_T_SLOT; // some time that is far enough for this processing to be done
     glossy_init = true;
@@ -360,7 +371,8 @@ uint8_t glossy_stop(void)
 /***** Glossy Statistics Functions *****/
 uint16_t glossy_get_per(void)
 {
-  return (uint16_t) g.stats.pkt_cnt_crc_Nok/(g.stats.pkt_cnt_crc_ok+g.stats.pkt_cnt_crc_Nok);
+  return (uint16_t)((uint64_t)g.stats.pkt_cnt_crc_Nok * 10000 /
+                    (uint64_t)(g.stats.pkt_cnt_crc_ok+g.stats.pkt_cnt_crc_Nok));
 }
 uint32_t glossy_get_n_pkts(void)
 {

@@ -189,6 +189,11 @@ void rx_callback(RF_Handle h, RF_CmdHandle ch, RF_EventMask e)
       /* start first transmission - post other tx from callbacks*/
       RF_postCmd(rfHandle, (RF_Op*)&RF_cmdPropTx,
                                                  RF_PriorityHighest, &tx_callback, TX_FLAGS);
+      if (flood_success_counted == false)
+      {
+        flood_success_counted = true;
+        g.stats.flood_cnt_success++;
+      }
     } else {  // TODO add Event condition
               //} else if (e & RF_EventRxNOk) {
       // RX failed, schedule next flood
@@ -380,8 +385,11 @@ uint8_t glossy_stop(void)
 /***** Glossy Statistics Functions *****/
 uint16_t glossy_get_per(void)
 {
-  return (uint16_t)((uint64_t)g.stats.pkt_cnt_crc_Nok * 10000 /
-                    (uint64_t)(g.stats.pkt_cnt_crc_ok+g.stats.pkt_cnt_crc_Nok));
+  if(g.stats.pkt_cnt_crc_ok+g.stats.pkt_cnt_crc_Nok) {
+    return ((uint64_t)g.stats.pkt_cnt_crc_Nok * 10000 /
+           (uint64_t)(g.stats.pkt_cnt_crc_ok+g.stats.pkt_cnt_crc_Nok));
+  }
+  return 0;
 }
 uint32_t glossy_get_n_pkts(void)
 {
@@ -390,4 +398,17 @@ uint32_t glossy_get_n_pkts(void)
 uint32_t glossy_get_n_pkts_crcok(void)
 {
   return g.stats.pkt_cnt_crc_ok;
+}
+uint16_t glossy_get_fsr(void)
+{
+  return (uint16_t)((uint64_t)g.stats.flood_cnt_success * 10000 /
+                    (uint64_t)g.stats.flood_cnt);
+}
+uint32_t glossy_get_fcs(void)
+{
+  return g.stats.flood_cnt_success;
+}
+uint32_t glossy_get_fc(void)
+{
+  return g.stats.flood_cnt;
 }

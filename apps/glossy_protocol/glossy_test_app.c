@@ -44,13 +44,19 @@ PROCESS_THREAD(glossy_test_process, ev, data)
       //LOG_DBG("crc ok packets: %lu\n", glossy_get_n_pkts_crcok());
       //LOG_DBG("no. of all packets (with corrupted ones): %lu\n",  glossy_get_n_pkts());
       //LOG_DBG("packet error rate: %u\n", glossy_get_per());
-      printf("%lu, ", glossy_get_n_pkts());
-      printf("%lu, ", glossy_get_n_pkts_crcok());
-      printf("%u\n", glossy_get_per());
+      //printf("%lu, ", glossy_get_n_pkts());
+      //printf("%lu, ", glossy_get_n_pkts_crcok());
+      //printf("%u", glossy_get_per());
+      //printf(", ");
+
+      printf("%lu, ", glossy_get_fcs());
+      printf("%lu, ", glossy_get_fc());
+      printf("%u", glossy_get_fsr());
+
+      printf("\n");
     }
   }
   #endif /* GLOSSY_CONF_COLLECT_STATS */
-
   
   // Run glossy for one second then stop
   //LOG_INFO("Run glossy for 1 second.\n");

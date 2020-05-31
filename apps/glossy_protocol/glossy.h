@@ -238,8 +238,10 @@ uint32_t glossy_get_flood_duration(void);
  */
 uint32_t glossy_get_t_to_first_rx(void);
 
-#endif /* GLOSSY_CONF_COLLECT_STATS */
+uint32_t glossy_get_fcs(void);
+uint32_t glossy_get_fc(void);
 
+#endif /* GLOSSY_CONF_COLLECT_STATS */
 
 #endif /* __GLOSSY_H__ */
 

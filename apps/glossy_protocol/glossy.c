@@ -181,14 +181,23 @@ void rx_callback(RF_Handle h, RF_CmdHandle ch, RF_EventMask e)
       }
       RF_cmdPropTx.startTime = rxTimestamp + GLOSSY_T_SLOT;
   
-      // TODO not needed right !
-      RF_cmdPropTx.pktLen = GLOSSY_PAYLOAD_LEN_WITH_COUNT ;
-      RF_cmdPropTx.pPkt = payload_with_counter; //TODO this may be a mistake
+      // For DeBr publication experiment [Decentralized Brains: A ReferenceImplementation with Performance Evaluation]
+      // changing this part will simulate an experiment as of having the nodes away form each other.
+      // The nodes will ignore all packets till a certain counter number (number specified in the next line).
+      if (payload_with_counter[0] < 9)
+      {
+        glossy_init = false;
+        schedule_next_flood();
+      } else {
+        // TODO not needed right !
+        RF_cmdPropTx.pktLen = GLOSSY_PAYLOAD_LEN_WITH_COUNT ;
+        RF_cmdPropTx.pPkt = payload_with_counter; //TODO this may be a mistake
 
-      RF_cmdPropTx.pPkt[0] += 1; // increment c (glossy relay counter)
-      /* start first transmission - post other tx from callbacks*/
-      RF_postCmd(rfHandle, (RF_Op*)&RF_cmdPropTx,
-                                                 RF_PriorityHighest, &tx_callback, TX_FLAGS);
+        RF_cmdPropTx.pPkt[0] += 1; // increment c (glossy relay counter)
+        /* start first transmission - post other tx from callbacks*/
+        RF_postCmd(rfHandle, (RF_Op*)&RF_cmdPropTx,
+                                                   RF_PriorityHighest, &tx_callback, TX_FLAGS);
+      }
       if (flood_success_counted == false)
       {
         flood_success_counted = true;

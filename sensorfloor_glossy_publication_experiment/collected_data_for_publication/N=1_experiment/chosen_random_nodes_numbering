@@ -1,0 +1,112 @@
+Flashing initiator node strip_id: 12 ip: 129.217.152.59 node_id: 8
+Flashing tester node strip_id: 12 ip: 129.217.152.59 node_id: 9
+group: 0
+Flashing node strip_id: 18 ip: 129.217.152.60 node_id: 15
+Flashing node strip_id: 1 ip: 129.217.152.74 node_id: 15
+Flashing node strip_id: 11 ip: 129.217.152.69 node_id: 15
+Flashing node strip_id: 9 ip: 129.217.152.77 node_id: 11
+Flashing node strip_id: 19 ip: 129.217.152.64 node_id: 8
+Flashing node strip_id: 14 ip: 129.217.152.48 node_id: 9
+Flashing node strip_id: 7 ip: 129.217.152.84 node_id: 1
+Flashing node strip_id: 17 ip: 129.217.152.37 node_id: 11
+Flashing node strip_id: 19 ip: 129.217.152.64 node_id: 1
+Flashing node strip_id: 10 ip: 129.217.152.118 node_id: 7
+group: 1
+Flashing node strip_id: 10 ip: 129.217.152.118 node_id: 14
+Flashing node strip_id: 5 ip: 129.217.152.86 node_id: 14
+Flashing node strip_id: 8 ip: 129.217.152.119 node_id: 8
+Flashing node strip_id: 2 ip: 129.217.152.111 node_id: 14
+Flashing node strip_id: 23 ip: 129.217.152.33 node_id: 4
+Flashing node strip_id: 17 ip: 129.217.152.37 node_id: 10
+Flashing node strip_id: 8 ip: 129.217.152.119 node_id: 1
+Flashing node strip_id: 10 ip: 129.217.152.118 node_id: 13
+Flashing node strip_id: 14 ip: 129.217.152.48 node_id: 14
+Flashing node strip_id: 21 ip: 129.217.152.51 node_id: 11
+group: 2
+Flashing node strip_id: 18 ip: 129.217.152.60 node_id: 12
+Flashing node strip_id: 9 ip: 129.217.152.77 node_id: 8
+Flashing node strip_id: 1 ip: 129.217.152.74 node_id: 3
+Flashing node strip_id: 18 ip: 129.217.152.60 node_id: 3
+Flashing node strip_id: 23 ip: 129.217.152.33 node_id: 6
+Flashing node strip_id: 18 ip: 129.217.152.60 node_id: 6
+Flashing node strip_id: 4 ip: 129.217.152.54 node_id: 13
+Flashing node strip_id: 5 ip: 129.217.152.86 node_id: 5
+Flashing node strip_id: 22 ip: 129.217.152.87 node_id: 4
+Flashing node strip_id: 14 ip: 129.217.152.48 node_id: 1
+group: 3
+Flashing node strip_id: 18 ip: 129.217.152.60 node_id: 14
+Flashing node strip_id: 17 ip: 129.217.152.37 node_id: 12
+Flashing node strip_id: 4 ip: 129.217.152.54 node_id: 9
+Flashing node strip_id: 20 ip: 129.217.152.62 node_id: 8
+Flashing node strip_id: 19 ip: 129.217.152.64 node_id: 5
+Flashing node strip_id: 7 ip: 129.217.152.84 node_id: 15
+Flashing node strip_id: 16 ip: 129.217.152.50 node_id: 14
+Flashing node strip_id: 21 ip: 129.217.152.51 node_id: 15
+Flashing node strip_id: 2 ip: 129.217.152.111 node_id: 8
+Flashing node strip_id: 1 ip: 129.217.152.74 node_id: 9
+group: 4
+Flashing node strip_id: 19 ip: 129.217.152.64 node_id: 6
+Flashing node strip_id: 7 ip: 129.217.152.84 node_id: 9
+Flashing node strip_id: 9 ip: 129.217.152.77 node_id: 10
+Flashing node strip_id: 20 ip: 129.217.152.62 node_id: 11
+Flashing node strip_id: 3 ip: 129.217.152.79 node_id: 3
+Flashing node strip_id: 7 ip: 129.217.152.84 node_id: 4
+Flashing node strip_id: 9 ip: 129.217.152.77 node_id: 4
+Flashing node strip_id: 22 ip: 129.217.152.87 node_id: 2
+Flashing node strip_id: 15 ip: 129.217.152.63 node_id: 7
+Flashing node strip_id: 19 ip: 129.217.152.64 node_id: 2
+group: 5
+Flashing node strip_id: 1 ip: 129.217.152.74 node_id: 11
+Flashing node strip_id: 17 ip: 129.217.152.37 node_id: 8
+Flashing node strip_id: 23 ip: 129.217.152.33 node_id: 14
+Flashing node strip_id: 19 ip: 129.217.152.64 node_id: 7
+Flashing node strip_id: 2 ip: 129.217.152.111 node_id: 2
+Flashing node strip_id: 13 ip: 129.217.152.85 node_id: 8
+Flashing node strip_id: 4 ip: 129.217.152.54 node_id: 10
+Flashing node strip_id: 20 ip: 129.217.152.62 node_id: 15
+Flashing node strip_id: 11 ip: 129.217.152.69 node_id: 3
+Flashing node strip_id: 8 ip: 129.217.152.119 node_id: 15
+group: 6
+Flashing node strip_id: 23 ip: 129.217.152.33 node_id: 12
+Flashing node strip_id: 11 ip: 129.217.152.69 node_id: 7
+Flashing node strip_id: 5 ip: 129.217.152.86 node_id: 10
+Flashing node strip_id: 10 ip: 129.217.152.118 node_id: 10
+Flashing node strip_id: 20 ip: 129.217.152.62 node_id: 12
+Flashing node strip_id: 15 ip: 129.217.152.63 node_id: 15
+Flashing node strip_id: 1 ip: 129.217.152.74 node_id: 4
+Flashing node strip_id: 19 ip: 129.217.152.64 node_id: 15
+Flashing node strip_id: 17 ip: 129.217.152.37 node_id: 5
+Flashing node strip_id: 14 ip: 129.217.152.48 node_id: 10
+group: 7
+Flashing node strip_id: 11 ip: 129.217.152.69 node_id: 2
+Flashing node strip_id: 21 ip: 129.217.152.51 node_id: 4
+Flashing node strip_id: 15 ip: 129.217.152.63 node_id: 10
+Flashing node strip_id: 4 ip: 129.217.152.54 node_id: 5
+Flashing node strip_id: 4 ip: 129.217.152.54 node_id: 7
+Flashing node strip_id: 12 ip: 129.217.152.59 node_id: 11
+Flashing node strip_id: 13 ip: 129.217.152.85 node_id: 14
+Flashing node strip_id: 16 ip: 129.217.152.50 node_id: 1
+Flashing node strip_id: 20 ip: 129.217.152.62 node_id: 6
+Flashing node strip_id: 15 ip: 129.217.152.63 node_id: 8
+group: 8
+Flashing node strip_id: 5 ip: 129.217.152.86 node_id: 1
+Flashing node strip_id: 17 ip: 129.217.152.37 node_id: 6
+Flashing node strip_id: 16 ip: 129.217.152.50 node_id: 12
+Flashing node strip_id: 21 ip: 129.217.152.51 node_id: 7
+Flashing node strip_id: 7 ip: 129.217.152.84 node_id: 13
+Flashing node strip_id: 22 ip: 129.217.152.87 node_id: 1
+Flashing node strip_id: 4 ip: 129.217.152.54 node_id: 11
+Flashing node strip_id: 1 ip: 129.217.152.74 node_id: 5
+Flashing node strip_id: 1 ip: 129.217.152.74 node_id: 2
+Flashing node strip_id: 5 ip: 129.217.152.86 node_id: 3
+group: 9
+Flashing node strip_id: 8 ip: 129.217.152.119 node_id: 7
+Flashing node strip_id: 15 ip: 129.217.152.63 node_id: 5
+Flashing node strip_id: 3 ip: 129.217.152.79 node_id: 9
+Flashing node strip_id: 11 ip: 129.217.152.69 node_id: 5
+Flashing node strip_id: 2 ip: 129.217.152.111 node_id: 15
+Flashing node strip_id: 11 ip: 129.217.152.69 node_id: 14
+Flashing node strip_id: 18 ip: 129.217.152.60 node_id: 7
+Flashing node strip_id: 20 ip: 129.217.152.62 node_id: 7
+Flashing node strip_id: 9 ip: 129.217.152.77 node_id: 12
+Flashing node strip_id: 19 ip: 129.217.152.64 node_id: 13

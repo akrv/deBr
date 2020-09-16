@@ -145,7 +145,24 @@ rfc_CMD_PROP_RADIO_DIV_SETUP_t RF_cmdPropRadioDivSetup =
     .config.biasMode = 0x1,
     .config.analogCfgMode = 0x0,
     .config.bNoFsPowerUp = 0x0,
-    .txPower = 0x04C0,
+    //---------------------------------------------------------------
+    //14 0xAB3F
+    //12 0xBC2B
+    //11 0x90E5
+    //10 0x58D8
+    //9   0x40D2
+    //8   0x32CE
+    //7   0x2ACB
+    //6   0x24C9
+    //5   0x20C8
+    //4   0x1844
+    //3   0x1CC6
+    //2   0x18C5
+    //1   0x16C4
+    //0   0x12C3
+    //-10 0x04C0
+    .txPower = 0xAB3F,
+    //---------------------------------------------------------------
     .pRegOverride = pOverrides,
     .centerFreq = 0x0364,
     .intFreq = 0x8000,

@@ -21,7 +21,8 @@ Based on null-net example in contiki-ng examples
 
 /*---------------------------------------------------------------------------*/
 /* Global variables*/
-uint32_t rx_start, rx_end;
+static uint32_t rx_start, rx_end;
+static uint32_t pkt_count;
 
 /*---------------------------------------------------------------------------*/
 PROCESS(nullnet_example_process, "NullNet unicast example");
@@ -32,6 +33,7 @@ void input_callback(const void *data, uint16_t len,
   const linkaddr_t *src, const linkaddr_t *dest)
 {
   rx_end = RTIMER_NOW();
+  pkt_count++;
 }
 /*---------------------------------------------------------------------------*/
 PROCESS_THREAD(nullnet_example_process, ev, data)
@@ -53,6 +55,8 @@ PROCESS_THREAD(nullnet_example_process, ev, data)
     LOG_INFO_LLADDR(NULL);
     LOG_INFO_(")\n");
 
+    pkt_count = 0;
+
     NETSTACK_NETWORK.output(NULL);
     rx_start = RTIMER_NOW();
     etimer_reset(&periodic_timer);
@@ -60,7 +64,13 @@ PROCESS_THREAD(nullnet_example_process, ev, data)
     
     /* measure how long it took to receive all packets*/
     PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&periodic_timer));
-    LOG_INFO("RX duration: %lu \n", rx_end-rx_start);
+    pkt_count--; // TODO why there is always an extra packet in the count
+    if (pkt_count != 0) {
+      LOG_INFO("RX duration: %lu \n", rx_end-rx_start);
+      LOG_INFO("No of packets: %lu \n", pkt_count);
+    } else {
+      LOG_INFO("No packets received\n");
+    }
 
   }
 

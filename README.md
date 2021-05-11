@@ -74,5 +74,17 @@ First publication explaning DeBr protocol structure and applications:
   pages={83-88},}
 ```
 
-Another publication discussing the implemented part of the DeBr protocol in this repo and presents the results is to published soon. 
-The paper test the protocol on a test bed of 345 nodes ([sensor-floor](https://github.com/akrv/sensorfloor)).
+Second publication explains the code in this repository in details. The paper test the protocol on a test bed of 345 nodes ([sensor-floor](https://github.com/akrv/sensorfloor)).
+
+```
+@InProceedings{10.1007/978-3-030-71061-3_6,
+author="Ramachandran Venkatapathy, Aswin Karthik and Gouda, Anas and ten Hompel, Michael and Paradiso, Joseph",
+editor="Penalver, Lourdes and Parra, Lorena",
+title="Decentralized Brains: A Reference Implementation with Performance Evaluation",
+booktitle="Industrial IoT Technologies and Applications",
+year="2021",
+publisher="Springer International Publishing",
+pages="80--99",
+isbn="978-3-030-71061-3"
+}
+```
